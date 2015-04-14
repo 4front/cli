@@ -45,13 +45,11 @@ program.version(require('../package.json').version)
 // 	}));
 
 program
-	.option('--github-repo [repo]',
+	.option('--template-url [templateUrl]',
 		'GitHub repo to scaffold a new app from. Specify owner/repoName')
-	.option('--github-branch [branch]',
-		'GitHub branch (only relevant if github-repo specified)')
 	.command('create-app')
 	.description('Create a new 4front app')
-	.action(commandAction('appCreate', {
+	.action(commandAction('create-app', {
 		loadNpmConfig: false
 	}));
 

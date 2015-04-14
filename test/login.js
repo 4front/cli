@@ -4,6 +4,8 @@ var shortid = require('shortid');
 var _ = require('lodash');
 var path = require('path');
 var fs = require('fs');
+var request = require('request');
+var inquirer = require('inquirer');
 var mockInquirer = require('./mock-inquirer');
 var login = require('../lib/login');
 var os = require('os');
@@ -11,192 +13,185 @@ var os = require('os');
 require('dash-assert');
 
 describe('login', function() {
-  var self;
-  var configFilePath = path.join(os.tmpdir(), '.4front');
-
-  beforeEach(function() {
-    self = this;
-
-    try {
-      fs.unlinkSync(configFilePath);
-    }
-    catch (err){}
+	beforeEach(function() {
+    this.jwt = {
+			user: {
+				userId: shortid.generate()
+			},
+			token: 'adfasdfasdfasdf',
+			expires: Date.now() + (1000 * 60 * 30)
+		};
 
     this.mockAnswers = {
       platformUrl: 'https://apphost.com',
       username: 'username',
       password: 'password'
-    }
-
-    this.inquirer = mockInquirer(this.mockAnswers);
-
-    this.jwt = {
-      user: {
-        userId: shortid.generate()
-      },
-      token: 'adfasdfasdfasdf',
-      expires: Date.now() + (1000 * 60 * 30)
     };
 
-    this.program = {
-      configFilePath: configFilePath,
-      inquirer: this.inquirer,
-      api: {
-        login: sinon.spy(function(username, password, callback){
-          callback(null, self.jwt);
-        })
-      }
-    };
-  });
+    this.mockInquirer = require('./mock-inquirer')(this.mockAnswers);
 
-  it('missing config file', function(done) {
-    login(this.program, function(err, jwt) {
-      assert.isTrue(self.inquirer.wasAsked('platformUrl'));
-      assert.isTrue(self.inquirer.wasAsked('username'));
-      assert.isTrue(self.inquirer.wasAsked('password'));
-      assert.isTrue(self.program.api.login.calledWith('username', 'password'));
+    sinon.stub(request, 'post').yields(null, {statusCode: 200}, this.jwt);
+    sinon.stub(inquirer, 'prompt', this.mockInquirer.prompt);
 
-      assert.equal(self.program.platformUrl, self.mockAnswers.platformUrl);
+		this.program = {
+			configFilePath: path.join(os.tmpdir(), shortid.generate() + '.json')
+		};
+	});
 
-      var config = JSON.parse(fs.readFileSync(configFilePath).toString());
+	afterEach(function(done) {
+		request.post.restore();
+    inquirer.prompt.restore();
 
-      assert.deepEqual(config.profiles[0], {
-        platformUrl: self.mockAnswers.platformUrl,
-        name: 'default',
-        default: true,
-        jwt: self.jwt
-      });
+    fs.unlink(this.program.configFilePath, done);
+	});
 
-      // assert.equal(config.profiles[0].platformUrl, self.mockAnswers.platformUrl);
-      //
-      // assert.deepEqual(config.profiles[0].jwt, jwt);
+	it('missing config file', function(done) {
+    var self = this;
 
+		login(this.program, function(err, jwt) {
+			assert.isTrue(self.mockInquirer.wasAsked('platformUrl'));
+			assert.isTrue(self.mockInquirer.wasAsked('username'));
+			assert.isTrue(self.mockInquirer.wasAsked('password'));
+
+			assert.equal(self.program.platformUrl, self.mockAnswers.platformUrl);
+
+			assert.isMatch(request.post.args[0][0], {
+				method: 'POST',
+				json: {
+					username: 'username',
+					password: 'password'
+				},
+				path: '/profile/login'
+			});
+
+			var config = JSON.parse(fs.readFileSync(self.program.configFilePath).toString());
+
+			assert.deepEqual(config.profiles[0], {
+				platformUrl: self.mockAnswers.platformUrl,
+				name: 'default',
+				default: true,
+				jwt: self.jwt
+			});
+
+			done();
+		});
+	});
+
+	it('corrupt config file', function(done) {
+    var self = this;
+		fs.writeFileSync(this.program.configFilePath, "invalid json");
+
+		login(this.program, function(err, jwt) {
+			assert.isTrue(self.mockInquirer.wasAsked('platformUrl'));
+			assert.isTrue(self.mockInquirer.wasAsked('username'));
+			assert.isTrue(self.mockInquirer.wasAsked('password'));
+			assert.isTrue(request.post.called);
       done();
-    });
-  });
+		});
+	});
 
-  it('corrupt config file', function(done) {
-    fs.writeFileSync(configFilePath, "invalid json");
+	it('uses the specified profile', function(done) {
+    var self = this;
+		fs.writeFileSync(this.program.configFilePath, JSON.stringify({
+			profiles: [{
+				name: 'host1',
+				platformUrl: "https://host1.com"
+			}, {
+				name: 'host2',
+				platformUrl: "https://host2.com"
+			}]
+		}, null, 2));
 
-    login(this.program, function(err, jwt) {
-      assert.isTrue(self.inquirer.wasAsked('platformUrl'));
-      assert.isTrue(self.inquirer.wasAsked('username'));
-      assert.isTrue(self.inquirer.wasAsked('password'));
-      assert.isTrue(self.program.api.login.calledWith('username', 'password'));
-      done();
-    });
-  });
+		this.program.profile = 'host2';
+		login(this.program, function(err, jwt) {
+			assert.equal(self.program.platformUrl, 'https://host2.com');
 
-  it('uses the specified profile', function(done) {
-    fs.writeFileSync(configFilePath, JSON.stringify({
-      profiles: [
-        {
-          name: 'host1',
-          platformUrl: "https://host1.com"
-        },
-        {
-          name: 'host2',
-          platformUrl: "https://host2.com"
-        }
-      ]
-    }, null, 2));
+			done();
+		});
+	});
 
-    this.program.profile = 'host2';
-    login(this.program, function(err, jwt) {
-      assert.equal(self.program.platformUrl, 'https://host2.com');
+	it('default profile is used if none specified', function(done) {
+    var self = this;
+		fs.writeFileSync(this.program.configFilePath, JSON.stringify({
+			profiles: [{
+				name: 'host1',
+				platformUrl: "https://host1.com"
+			}, {
+				name: 'host2',
+				platformUrl: "https://host2.com",
+				default: true
+			}]
+		}, null, 2));
 
-      done();
-    });
-  });
+		login(this.program, function(err, jwt) {
+			assert.equal(self.program.platformUrl, 'https://host2.com');
 
-  it('default profile is used if none specified', function(done) {
-    fs.writeFileSync(configFilePath, JSON.stringify({
-      profiles: [
-        {
-          name: 'host1',
-          platformUrl: "https://host1.com"
-        },
-        {
-          name: 'host2',
-          platformUrl: "https://host2.com",
-          default: true
-        }
-      ]
-    }, null, 2));
+			done();
+		});
+	});
 
-    login(this.program, function(err, jwt) {
-      assert.equal(self.program.platformUrl, 'https://host2.com');
+	it('first profile used as fallback', function(done) {
+    var self = this;
+		fs.writeFileSync(this.program.configFilePath, JSON.stringify({
+			profiles: [{
+				name: 'host1',
+				platformUrl: "https://host1.com"
+			}, {
+				name: 'host2',
+				platformUrl: "https://host2.com"
+			}]
+		}, null, 2));
 
-      done();
-    });
-  });
+		login(this.program, function(err, jwt) {
+			assert.equal(self.program.platformUrl, 'https://host1.com');
 
-  it('first profile used if no default and no option specified', function(done) {
-    fs.writeFileSync(configFilePath, JSON.stringify({
-      profiles: [
-        {
-          name: 'host1',
-          platformUrl: "https://host1.com"
-        },
-        {
-          name: 'host2',
-          platformUrl: "https://host2.com"
-        }
-      ]
-    }, null, 2));
+			done();
+		});
+	});
 
-    login(this.program, function(err, jwt) {
-      assert.equal(self.program.platformUrl, 'https://host1.com');
+	it('expired token still requires user to login', function(done) {
+    var self = this;
+		// Write config file with an expired jwt
+		fs.writeFileSync(this.program.configFilePath, JSON.stringify({
+			profiles: [{
+				platformUrl: "https://host1.com",
+				jwt: _.extend(this.jwt, {
+					expires: Date.now() - 1000
+				})
+			}]
+		}, null, 2));
 
-      done();
-    });
-  });
+		login(this.program, function(err, jwt) {
+			// login api should still be called
+			assert.isTrue(self.mockInquirer.wasAsked('username'));
+			assert.isTrue(self.mockInquirer.wasAsked('password'));
+			assert.isTrue(request.post.called);
 
-  it('expired token still requires user to login', function(done) {
-    // Write config file with an expired jwt
-    fs.writeFileSync(configFilePath, JSON.stringify({
-      profiles: [
-        {
-          platformUrl: "https://host1.com",
-          jwt: _.extend(self.jwt, {
-            expires: Date.now() - 1000
-          })
-        }
-      ]
-    }, null, 2));
+			done();
+		});
+	});
 
-    login(this.program, function(err, jwt) {
-      // login api should still be called
-      assert.isTrue(self.inquirer.wasAsked('username'));
-      assert.isTrue(self.inquirer.wasAsked('password'));
-      assert.isTrue(self.program.api.login.called);
+	it('valid token skips login', function(done) {
+    var self = this;
+		_.extend(this.jwt, {
+			expires: Date.now() + (1000 * 60)
+		});
 
-      done();
-    });
-  });
+		fs.writeFileSync(this.program.configFilePath, JSON.stringify({
+			profiles: [{
+				platformUrl: "https://host1.com",
+				jwt: this.jwt
+			}]
+		}, null, 2));
 
-  it('valid token skips login', function(done) {
-    _.extend(self.jwt, {
-      expires: Date.now() + (1000 * 60)
-    });
+		login(this.program, function(err, jwt) {
+			// login api should still be called
+			assert.isFalse(self.mockInquirer.wasAsked('username'));
+			assert.isFalse(self.mockInquirer.wasAsked('password'));
+			assert.isFalse(request.post.called);
+			assert.deepEqual(jwt, self.jwt);
 
-    fs.writeFileSync(configFilePath, JSON.stringify({
-      profiles: [
-        {
-          platformUrl: "https://host1.com",
-          jwt: self.jwt
-        }
-      ]
-    }, null, 2));
-
-    login(this.program, function(err, jwt) {
-      // login api should still be called
-      assert.isFalse(self.inquirer.wasAsked('username'));
-      assert.isFalse(self.inquirer.wasAsked('password'));
-      assert.isFalse(self.program.api.login.called);
-      assert.deepEqual(jwt, self.jwt);
-
-      done();
-    });
-  });
+			done();
+		});
+	});
 });
