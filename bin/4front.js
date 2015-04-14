@@ -32,16 +32,17 @@ program.version(require('../package.json').version)
 		'User id. If not provided the credentials in the .aerobatic file are used')
 	.option('-k, --secretKey [secretKey]', 'User secret key')
 	.option('-p, --port [portNumber]', 'Port number to listen on')
-	.option('--dev', 'Run yoke against the development environment')
+	// .option('--dev', 'Run yoke against the development environment')
+	.option('--profile [profileName]', 'Specify which profile to use')
 	.option('--offline', 'Indicate that your are offline')
 
-program
-	.command('login')
-	.description("Write the login credentials")
-	.action(commandAction('login', {
-		requireCredentials: false,
-		loadNpmConfig: false
-	}));
+// program
+// 	.command('login')
+// 	.description("Write the login credentials")
+// 	.action(commandAction('login', {
+// 		requireCredentials: false,
+// 		loadNpmConfig: false
+// 	}));
 
 program
 	.option('--github-repo [repo]',
@@ -49,7 +50,7 @@ program
 	.option('--github-branch [branch]',
 		'GitHub branch (only relevant if github-repo specified)')
 	.command('create-app')
-	.description('Create a new Aerobatic app')
+	.description('Create a new 4front app')
 	.action(commandAction('appCreate', {
 		loadNpmConfig: false
 	}));
@@ -87,6 +88,11 @@ program
 	.description('Deploy a new version of the app')
 	.action(commandAction('deploy'));
 
+// Set the default profile
+program
+	.command('default-profile')
+	.action(commandAction('default-profile'));
+
 program
 	.command('*')
 	.action(function(env) {
@@ -97,31 +103,27 @@ program
 program.parse(process.argv);
 
 process.on('exit', function(code) {
-
 	log.info("Exiting");
 });
 
 function commandAction(name, options) {
 	// Extend any options from program to options.
 	return function() {
-		_.extend(program, _.defaults(options || {}, {
-			requireCredentials: true,
-			loadNpmConfig: true
-		}));
+		program.ext = {};
 
-		var options = {
+		_.extend(program, _.defaults(options || {}, {
+			// requireCredentials: true,
+			// loadNpmConfig: true
 			configFilePath: path.join(osenv.home(), '.4front'),
 			api: require('../lib/api'),
 			prompt: require('inquirer')
-		};
+		}));
 
-		// var configFile = path.join(osenv.home(), '.4front');
-
-		login(options, function(err, jwt) {
+		login(program, function(err, jwt) {
 			log.error(err.stack || err.toString());
 
 			// Save the JWT somewhere to pass along in subsequent API calls.
-			program.ext.jwt = jwt;
+			program.jwt = jwt;
 
 			// Run the command
 			require('../commands/' + name)(program, function(err, onKill) {
@@ -148,9 +150,9 @@ function commandAction(name, options) {
 		});
 
 		// Extend program with the values.
-		_.each(results, function(value, key) {
-			_.extend(program, value);
-		});
+		// _.each(results, function(value, key) {
+		// 	_.extend(program, value);
+		// });
 
 		setProgramDefaults();
 
@@ -165,30 +167,3 @@ function commandAction(name, options) {
 //   if (program.dev)
 //     process.env.AEROBATIC_ENV = 'dev';
 // }
-
-function loadCredentials(callback) {
-	var aerobaticDotFile = path.join(osenv.home(), '.aerobatic');
-	log.debug("Loading credentials from %s", aerobaticDotFile);
-
-	// TODO: Check that .aerobatic file doesn't have overly permissive access similar to how openSSH does.
-	fs.exists(aerobaticDotFile, function(exists) {
-		if (!exists)
-			return callback("No .aerobatic file exists. First run 'yoke login'");
-
-		var credentials;
-		try {
-			credentials = JSON.parse(fs.readFileSync(aerobaticDotFile));
-		}
-		catch (e) {
-			return callback(
-				"Could not parse .aerobatic file JSON. Try re-running 'yoke login'");
-		}
-
-		if (_.isEmpty(credentials.userId) || _.isEmpty(credentials.secretKey))
-			return callback(
-				"Missing information in .aerobatic file. Try re-running 'yoke login'");
-
-		log.debug("Credentials loaded, userId=%s", credentials.userId);
-		callback(null, credentials);
-	});
-}
