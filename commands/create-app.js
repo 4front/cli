@@ -5,6 +5,7 @@ var _ = require('lodash');
 // var zlib = require('zlib');
 var tar = require('tar');
 var fs = require('fs');
+var unzip = require('unzip');
 var urljoin = require('url-join');
 var path = require('path');
 var inquirer = require('inquirer');
@@ -25,10 +26,9 @@ module.exports = function(program, done) {
 	// }
 
 	program = _.defaults(program || {}, {
-		templatesUrl: 'https://raw.githubusercontent.com/aerobatic/markdown-content/master/metadata/appTemplates.json',
-		// githubUrl: 'https://github.com',
 		baseDir: process.cwd()
 	});
+
 
 	log.messageBox("Create a new 4front app");
 
@@ -43,7 +43,7 @@ module.exports = function(program, done) {
 				"directory where your existing app code resides.");
 
 		var tasks = [], appDir;
-		if (answers.startingMode === 'scratch' || program.githubRepo) {
+		if (answers.startingMode === 'scratch' || program.templateUrl) {
 			// Create a new directory corresponding to the app name
 			appDir = path.join(program.baseDir, answers.appName);
 			tasks.push(function(cb) {
@@ -56,20 +56,20 @@ module.exports = function(program, done) {
 
 		log.debug("Setting appDir to %s", appDir);
 
-		if (answers.template === 'none') {
+		if (answers.templateUrl === 'none') {
 			// Make a new package.json from scratch
 			tasks.push(function(cb) {
 				createBlankStart(answers, appDir, cb);
 			});
 		}
-		else if (answers.template) {
+		else if (answers.templateUrl) {
 			tasks.push(function(cb) {
-				unpackTemplate(answers.template.githubRepo, null, appDir, cb);
+				unpackTemplate(answers.templateUrl, null, appDir, cb);
 			});
 		}
-		else if (program.githubRepo) {
+		else if (program.templateUrl) {
 			tasks.push(function(cb) {
-				unpackTemplate(program.githubRepo, program.githubBranch, appDir, cb);
+				unpackTemplate(program.templateUrl, appDir, cb);
 			});
 		}
 
@@ -123,7 +123,6 @@ module.exports = function(program, done) {
 		}, function(err, results) {
 			if (err) return callback(err);
 
-			debugger;
 			if (results.organizations.length == 0)
 				return callback(
 					"You need to belong to an organization to create a new app. Visit " + urljoin(program.platformUrl, '/portal/orgs/create') + " to get started."
@@ -137,7 +136,7 @@ module.exports = function(program, done) {
 		log.debug("fetching app templates");
 		api(program, {
 			method: 'GET',
-			path: '/system/templates'
+			path: '/platform/app-templates'
 		}, function(err, templates) {
 			if (err) return callback(err);
 			callback(null, templates);
@@ -189,9 +188,9 @@ module.exports = function(program, done) {
 			}],
 			default: null,
 			when: function() {
-				// If a GitHub repo was passed in from the command line we are
+				// If a templateUrl was passed in from the command line we are
 				// by definition starting from scratch.
-				return !program.githubRepo;
+				return !program.templateUrl;
 			},
 			message: "Are you starting this app from existing code or from scratch?"
 		});
@@ -292,9 +291,8 @@ module.exports = function(program, done) {
 
 	function npmInstall(appDir, callback) {
 		fs.exists(path.join(appDir, 'package.json'), function(exists) {
-			if (!exists) {
-				return callback("No package.json file exists in app directory");
-			}
+			if (!exists)
+				return callback();
 
 			// If th node_modules directory already exists, assume npm install already run
 			if (fs.exists(path.join(appDir, 'node_modules')))
@@ -323,26 +321,21 @@ module.exports = function(program, done) {
 		});
 	}
 
-	// function unpackTemplate(githubRepo, githubBranch, appDir, callback) {
-	// 	if (_.isEmpty(githubBranch) === true)
-	// 		githubBranch = 'master';
-	//
-	// 	// Download, unzip, and extract the template from GitHub repo.
-	// 	var archiveUrl = program.githubUrl + '/' + githubRepo + '/archive/' +
-	// 		githubBranch + '.tar.gz';
-	// 	log.info("Unpacking template %s", archiveUrl);
-	//
-	// 	request(archiveUrl)
-	// 		.pipe(zlib.createGunzip())
-	// 		.pipe(tar.Extract({
-	// 			path: appDir,
-	// 			strip: 1
-	// 		}))
-	// 		.on('error', function(err) {
-	// 			return callback(err);
-	// 		})
-	// 		.on('end', callback);
-	// }
+	function unpackTemplate(templateUrl, appDir, callback) {
+		if (templateUrl.slice(-4) !== '.zip')
+			return callback(new Error("Template URL must be a .zip"));
+
+		// Download, unzip, and extract the template.
+		log.info("Unpacking template %s to %s", templateUrl, appDir);
+
+		request.get({url: templateUrl})
+			.pipe(unzip.Extract({path: appDir}))
+			.on('error', function(err) {
+				return callback(err);
+			})
+			// unzip emits the close event once contents are fully extracted to disk
+			.on('close', callback);
+	}
 
 	function createBlankStart(answers, appDir, callback) {
 		// Create the bare minimum app code required to run the simulator
