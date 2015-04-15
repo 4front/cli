@@ -32,7 +32,8 @@ describe('create-app', function() {
       platformUrl: 'https://apphost.com/',
       jwt: {
         token: '23523454'
-      }
+      },
+      baseDir: os.tmpdir()
     };
 
     this.mockAnswers = {
@@ -49,6 +50,7 @@ describe('create-app', function() {
     sinon.stub(log, 'write', _.noop());
 
     sinon.stub(request, 'get', function(options, callback) {
+      console.log("request get %s", options.url);
       var urlPath = parseUrl(options.url).pathname;
       switch (urlPath) {
         case '/api/platform/app-templates':
@@ -85,18 +87,6 @@ describe('create-app', function() {
 
     sinon.stub(inquirer, 'prompt', this.mockInquirer.prompt);
     sinon.stub(childProcess, 'spawn', mockSpawn);
-    //  function() {
-    //   // return object that emits the exit event
-    //   function MockSpawn(){};
-    //   util.inherits(MockSpawn, EventEmitter);
-    //
-    //   var spawn = new MockSpawn();
-    //   setTimeout(function() {
-    //     spawn.emit('exit', 0);
-    //   }, 100);
-    //
-    //   return spawn;
-    // });
 
     rimraf(path.join(os.tmpdir(), 'test-app'), done);
 	});
@@ -112,7 +102,6 @@ describe('create-app', function() {
 
   it('collect input', function(done) {
     _.extend(this.mockAnswers, {
-      appName: 'test-app',
       templateUrl: 'none',
       startingMode: 'scratch'
     });
@@ -141,8 +130,7 @@ describe('create-app', function() {
   describe('downloads starter template', function() {
     it('uses command line template arg', function(done) {
       _.extend(this.program, {
-        templateUrl: "http://github.com/sample-app-template.zip",
-        baseDir: os.tmpdir()
+        templateUrl: "http://github.com/sample-app-template.zip"
       });
 
       createApp(this.program, function(err) {
@@ -151,7 +139,13 @@ describe('create-app', function() {
         var appDir = path.join(self.program.baseDir, self.mockAnswers.appName);
 
         assert.isFalse(self.mockInquirer.wasAsked('startingMode'));
+
+        assert.isTrue(request.get.calledWith(
+          sinon.match({url: self.program.templateUrl})));
+
+        // Assert that both npm and bower install were run
         assert.isTrue(childProcess.spawn.calledWith('npm', ['install'], sinon.match({cwd: appDir})));
+        assert.isTrue(childProcess.spawn.calledWith('bower', ['install'], sinon.match({cwd: appDir})));
 
         // verify that the extracted contents from the template zip are present
         async.eachSeries(['index.html', 'js/app.js', 'css/styles.css'], function(file, cb) {
@@ -164,5 +158,22 @@ describe('create-app', function() {
         }, done);
       });
     });
+
+    // it('uses template specified at prompt', function(done) {
+    //   _.extend(this.mockAnswers, {
+    //     startingMode: 'scratch',
+    //     templateUrl: 'http://github.com/sample-app-template.zip'
+    //   });
+    //
+    //   createApp(this.program, function(err) {
+    //     if (err) return done(err);
+    //
+    //     // assert.isTrue(self.mockInquirer.wasAsked('templateUrl'));
+    //     // assert.isTrue(request.get.calledWith(
+    //     //   sinon.match({url: self.mockAnswers.templateUrl})));
+    //
+    //     done();
+    //   });
+    // });
   });
 });

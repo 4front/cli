@@ -46,6 +46,7 @@ module.exports = function(program, done) {
 
 		log.debug("Setting appDir to %s", appDir);
 
+		debugger;
 		if (answers.templateUrl === 'none') {
 			// Make a new package.json from scratch
 			tasks.push(function(cb) {
@@ -54,7 +55,7 @@ module.exports = function(program, done) {
 		}
 		else if (answers.templateUrl) {
 			tasks.push(function(cb) {
-				unpackTemplate(answers.templateUrl, null, appDir, cb);
+				unpackTemplate(answers.templateUrl, appDir, cb);
 			});
 		}
 		else if (program.templateUrl) {

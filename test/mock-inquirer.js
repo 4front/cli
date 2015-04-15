@@ -7,9 +7,12 @@ module.exports = function(mockAnswers) {
   return {
     prompt: function(questions, callback) {
       var answers = {};
-      async.each(questions, function(question, cb) {
+      debugger;
+
+      async.eachSeries(questions, function(question, cb) {
         var shouldAsk = true;
         if (_.isFunction(question.when)) {
+          debugger;
           if (question.when(answers) === false)
             return cb();
         }
@@ -34,6 +37,7 @@ module.exports = function(mockAnswers) {
         answers[question.name] = mockAnswer;
         cb();
       }, function() {
+        debugger;
         callback(answers);
       });
     },
