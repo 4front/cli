@@ -2,8 +2,6 @@ var chalk = require('chalk');
 var async = require('async');
 var request = require('request');
 var _ = require('lodash');
-// var zlib = require('zlib');
-var tar = require('tar');
 var fs = require('fs');
 var unzip = require('unzip');
 var urljoin = require('url-join');
@@ -18,17 +16,9 @@ var helper = require('../lib/helper');
 require("simple-errors");
 
 module.exports = function(program, done) {
-	// if (program.githubRepo) {
-	// 	program.githubRepo = helper.parseGithubRepo(program.githubRepo);
-	// 	if (program.githubRepo === false) {
-	// 		return done("Invalid github-repo option");
-	// 	}
-	// }
-
 	program = _.defaults(program || {}, {
 		baseDir: process.cwd()
 	});
-
 
 	log.messageBox("Create a new 4front app");
 

@@ -10,11 +10,13 @@ var parseUrl = require('url').parse;
 var rimraf = require('rimraf');
 var log = require('../lib/log');
 var fs = require('fs');
+var childProcess = require('child_process');
 var request = require('request');
 var inquirer = require('inquirer');
-var mockInquirer = require('./mock-inquirer');
 var createApp = require('../commands/create-app');
 var os = require('os');
+var mockSpawn = require('./mock-spawn');
+var mockInquirer = require('./mock-inquirer');
 
 require('dash-assert');
 
@@ -44,7 +46,6 @@ describe('create-app', function() {
     this.mockOrgs = [{orgId: '1', name: 'org 1'}, {orgId: '2', name: 'org 2'}];
     this.mockTemplates = [{name: 'template1', url:'http://github.com/repo.tar.gz'}];
 
-    // sinon.stub(log, 'writeln', _.noop());
     sinon.stub(log, 'write', _.noop());
 
     sinon.stub(request, 'get', function(options, callback) {
@@ -83,6 +84,19 @@ describe('create-app', function() {
     });
 
     sinon.stub(inquirer, 'prompt', this.mockInquirer.prompt);
+    sinon.stub(childProcess, 'spawn', mockSpawn);
+    //  function() {
+    //   // return object that emits the exit event
+    //   function MockSpawn(){};
+    //   util.inherits(MockSpawn, EventEmitter);
+    //
+    //   var spawn = new MockSpawn();
+    //   setTimeout(function() {
+    //     spawn.emit('exit', 0);
+    //   }, 100);
+    //
+    //   return spawn;
+    // });
 
     rimraf(path.join(os.tmpdir(), 'test-app'), done);
 	});
@@ -93,6 +107,7 @@ describe('create-app', function() {
     request.get.restore();
     inquirer.prompt.restore();
     log.write.restore();
+    childProcess.spawn.restore();
   });
 
   it('collect input', function(done) {
@@ -133,11 +148,14 @@ describe('create-app', function() {
       createApp(this.program, function(err) {
         if (err) return done(err);
 
+        var appDir = path.join(self.program.baseDir, self.mockAnswers.appName);
+
         assert.isFalse(self.mockInquirer.wasAsked('startingMode'));
+        assert.isTrue(childProcess.spawn.calledWith('npm', ['install'], sinon.match({cwd: appDir})));
 
         // verify that the extracted contents from the template zip are present
         async.eachSeries(['index.html', 'js/app.js', 'css/styles.css'], function(file, cb) {
-          var filePath = path.join(self.program.baseDir, self.mockAnswers.appName, file);
+          var filePath = path.join(appDir, file);
 
           fs.exists(filePath, function(exists) {
             assert.isTrue(exists);
