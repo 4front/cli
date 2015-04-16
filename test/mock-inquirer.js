@@ -2,12 +2,11 @@ var _ = require('lodash');
 var async = require('async');
 
 module.exports = function(mockAnswers) {
-  var askedQuestions = [];
+  var askedQuestions = {};
 
   return {
     prompt: function(questions, callback) {
       var answers = {};
-      debugger;
 
       async.eachSeries(questions, function(question, cb) {
         var shouldAsk = true;
@@ -17,11 +16,14 @@ module.exports = function(mockAnswers) {
             return cb();
         }
 
-        askedQuestions.push(question.name);
+        if (!askedQuestions[question.name])
+          askedQuestions[question.name] = 1;
+        else
+          askedQuestions[question.name]++;
 
         var mockAnswer = mockAnswers[question.name];
         if (_.isUndefined(mockAnswer))
-          return cb(new Error("No mock answer provided for question " + question.name));
+          return cb();
 
         if (_.isFunction(mockAnswer))
           mockAnswer = mockAnswer(answers);
@@ -37,13 +39,19 @@ module.exports = function(mockAnswers) {
         answers[question.name] = mockAnswer;
         cb();
       }, function() {
-        debugger;
         callback(answers);
       });
     },
 
     wasAsked: function(name) {
-      return _.contains(askedQuestions, name);
+      return _.has(askedQuestions, name);
+    },
+
+    askedCount: function(name) {
+      if (!askedQuestions[name])
+        return 0;
+      else
+        return askedQuestions[name];
     }
   };
 };

@@ -10,7 +10,7 @@ var inquirer = require('inquirer');
 var spawn = require('../lib/spawn');
 var api = require('../lib/api');
 var log = require('../lib/log');
-// var npmConfig = require('../lib/npmConfig');
+var npmConfig = require('../lib/npm-config');
 var helper = require('../lib/helper');
 
 require("simple-errors");
@@ -46,7 +46,6 @@ module.exports = function(program, done) {
 
 		log.debug("Setting appDir to %s", appDir);
 
-		debugger;
 		if (answers.templateUrl === 'none') {
 			// Make a new package.json from scratch
 			tasks.push(function(cb) {
@@ -83,9 +82,9 @@ module.exports = function(program, done) {
 		});
 
 		// Update the package.json
-		// tasks.push(function(cb) {
-		// 	npmConfig(appDir, createdApp, cb);
-		// });
+		tasks.push(function(cb) {
+			npmConfig(appDir, createdApp, cb);
+		});
 
 		async.series(tasks, function(err) {
 			if (err) return done(err);
@@ -248,7 +247,7 @@ module.exports = function(program, done) {
 			inquirer.prompt([question], function(answers) {
 				appNameExists(answers.appName, function(err, exists) {
 					if (exists)
-						console.log(chalk.red(">>") + " App name \"" + answers.appName +
+						log.writeln(chalk.red(">>") + " App name \"" + answers.appName +
 							"\" is already taken. Please choose another name.");
 					else
 						appName = answers.appName;

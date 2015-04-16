@@ -40,7 +40,6 @@
   },
   "devDependencies": {
     "dash-assert": "^1.0.1",
-    "express": "^4.12.3",
     "istanbul": "^0.3.13",
     "mocha": "^2.2.4",
     "shortid": "^2.2.2",

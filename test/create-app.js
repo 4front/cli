@@ -1,8 +1,6 @@
 var assert = require('assert');
 var async = require('async');
 var sinon = require('sinon');
-var express = require('express');
-var http = require('http');
 var shortid = require('shortid');
 var _ = require('lodash');
 var path = require('path');
@@ -50,7 +48,6 @@ describe('create-app', function() {
     sinon.stub(log, 'write', _.noop());
 
     sinon.stub(request, 'get', function(options, callback) {
-      console.log("request get %s", options.url);
       var urlPath = parseUrl(options.url).pathname;
       switch (urlPath) {
         case '/api/platform/app-templates':
@@ -70,9 +67,7 @@ describe('create-app', function() {
       }
     });
 
-    sinon.stub(request, 'head', function(options, callback) {
-      callback(null, {statusCode:404}, null);
-    });
+    sinon.stub(request, 'head').yields(null, {statusCode:404});
 
     sinon.stub(request, 'post', function(options, callback) {
       // Mock the create app post request
@@ -133,7 +128,7 @@ describe('create-app', function() {
         templateUrl: "http://github.com/sample-app-template.zip"
       });
 
-      createApp(this.program, function(err) {
+      createApp(this.program, function(err, createdApp) {
         if (err) return done(err);
 
         var appDir = path.join(self.program.baseDir, self.mockAnswers.appName);
@@ -148,32 +143,77 @@ describe('create-app', function() {
         assert.isTrue(childProcess.spawn.calledWith('bower', ['install'], sinon.match({cwd: appDir})));
 
         // verify that the extracted contents from the template zip are present
-        async.eachSeries(['index.html', 'js/app.js', 'css/styles.css'], function(file, cb) {
+        ['index.html', 'js/app.js', 'css/styles.css', 'package.json'].forEach(function(file) {
           var filePath = path.join(appDir, file);
+          assert.isTrue(fs.existsSync(filePath));
+        });
 
-          fs.exists(filePath, function(exists) {
-            assert.isTrue(exists);
-            cb();
-          });
-        }, done);
+        var packageJson = JSON.parse(fs.readFileSync(path.join(appDir, 'package.json')));
+        assert.equal(packageJson['_virtualApp'].appId, createdApp.appId);
+
+        done();
       });
     });
 
-    // it('uses template specified at prompt', function(done) {
-    //   _.extend(this.mockAnswers, {
-    //     startingMode: 'scratch',
-    //     templateUrl: 'http://github.com/sample-app-template.zip'
-    //   });
-    //
-    //   createApp(this.program, function(err) {
-    //     if (err) return done(err);
-    //
-    //     // assert.isTrue(self.mockInquirer.wasAsked('templateUrl'));
-    //     // assert.isTrue(request.get.calledWith(
-    //     //   sinon.match({url: self.mockAnswers.templateUrl})));
-    //
-    //     done();
-    //   });
-    // });
+    it('uses template specified at prompt', function(done) {
+      _.extend(this.mockAnswers, {
+        startingMode: 'scratch',
+        templateUrl: 'http://github.com/sample-app-template.zip'
+      });
+
+      createApp(this.program, function(err) {
+        if (err) return done(err);
+
+        assert.isTrue(self.mockInquirer.wasAsked('templateUrl'));
+        assert.isTrue(request.get.calledWith(
+          sinon.match({url: self.mockAnswers.templateUrl})));
+
+        done();
+      });
+    });
+  });
+
+  it('creates index.html when no template chosen', function(done) {
+    _.extend(this.mockAnswers, {
+      startingMode: 'scratch',
+      templateUrl: 'none'
+    });
+
+    createApp(this.program, function(err, createdApp) {
+      if (err) return done(err);
+
+      var appDir = path.join(self.program.baseDir, self.mockAnswers.appName);
+
+      ['index.html', 'package.json'].forEach(function(file) {
+        var filePath = path.join(appDir, file);
+        assert.isTrue(fs.existsSync(filePath));
+      });
+
+      // Look at the package.json
+      var packageJson = JSON.parse(fs.readFileSync(path.join(appDir, 'package.json')));
+      assert.isObject(packageJson['_virtualApp']);
+      assert.equal(packageJson['_virtualApp'].appId, createdApp.appId);
+
+      done();
+    });
+  });
+
+  it('continues to ask for appName until one available', function(done) {
+    request.head.restore();
+
+    var headStub = sinon.stub(request, 'head');
+    headStub.onCall(0).yields(null, {statusCode: 200});
+    headStub.onCall(1).yields(null, {statusCode: 200});
+    // On the 3rd call yield a 404 indicating the app name is available
+    headStub.onCall(2).yields(null, {statusCode: 404});
+
+    createApp(this.program, function(err) {
+      if (err) return done(err);
+
+      // The appName question should have been asked 3 times
+      assert.equal(self.mockInquirer.askedCount('appName'), 3);
+
+      done();
+    });
   });
 });
