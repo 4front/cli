@@ -12,6 +12,7 @@ var log = require('../lib/log');
 var updateNotifier = require('update-notifier');
 var shortid = require('shortid');
 var login = require('../lib/login');
+var virtualAppConfig = require('virtual-app-config');
 var pkg = require('../package.json');
 
 require('simple-errors');
@@ -26,23 +27,13 @@ updateNotifier({
 	updateCheckInterval: 1000 * 60 * 60 * 2 // Check for updates every 2 hours
 }).notify();
 
+program.configFilePath: path.join(osenv.home(), '.4front');
+
 program.version(require('../package.json').version)
 	.option('-d, --debug', 'Emit debug messages')
-	.option('-u, --userId [userId]',
-		'User id. If not provided the credentials in the .aerobatic file are used')
-	.option('-k, --secretKey [secretKey]', 'User secret key')
+	.option('--token [token]', 'JSON web token')
 	.option('-p, --port [portNumber]', 'Port number to listen on')
-	// .option('--dev', 'Run yoke against the development environment')
 	.option('--profile [profileName]', 'Specify which profile to use')
-	.option('--offline', 'Indicate that your are offline')
-
-// program
-// 	.command('login')
-// 	.description("Write the login credentials")
-// 	.action(commandAction('login', {
-// 		requireCredentials: false,
-// 		loadNpmConfig: false
-// 	}));
 
 program
 	.option('--template-url [templateUrl]',
@@ -50,22 +41,22 @@ program
 	.command('create-app')
 	.description('Create a new 4front app')
 	.action(commandAction('create-app', {
-		loadNpmConfig: false
+		loadVirtualAppConfig: false
 	}));
 
 program
 	.command('bind-app')
 	.description('Bind the current directory to an existing Aerobatic app')
 	.action(commandAction('appBind', {
-		loadNpmConfig: false
+		loadVirtualAppConfig: false
 	}));
 
 program
 	.option('-o, --open', 'Open a browser to the local server')
 	.option('--release', 'Run in release mode')
-	.command('serve')
-	.description("Run a localhost instance of the app")
-	.action(commandAction('serve'));
+	.command('sandbox')
+	.description("Start the developer sandbox environment")
+	.action(commandAction('sandbox'));
 
 program
 // .option('-o, --open', 'Open a browser to the simulator host')
@@ -107,21 +98,56 @@ process.on('exit', function(code) {
 function commandAction(name, options) {
 	// Extend any options from program to options.
 	return function() {
-		program.ext = {};
+		_.defaults(options, {
+			requireAuth: true,
+			loadVirtualAppConfig: true,
+			loadVirtualApp: true
+		});
 
-		_.extend(program, _.defaults(options || {}, {
-			// requireCredentials: true,
-			// loadNpmConfig: true
-			configFilePath: path.join(osenv.home(), '.4front'),
-			api: require('../lib/api'),
-			prompt: require('inquirer')
-		}));
+		var initTasks = [];
+		if (requireAuth === true) {
+			tasks.push(function(cb) {
+				login(program, function(err, jwt) {
+					if (err) return cb(err);
 
-		login(program, function(err, jwt) {
-			log.error(err.stack || err.toString());
+					// Save the JWT for use in subsequent API calls.
+					program.jwt = jwt;
+					cb();
+				});
+			});
+		}
 
-			// Save the JWT somewhere to pass along in subsequent API calls.
-			program.jwt = jwt;
+		if (options.loadVirtualAppConfig === true) {
+			initTasks.push(function(cb) {
+				log.debug("loading virtual app config from package.json");
+				virtualAppConfig.load(program, function(err, config) {
+					if (err) return cb(err);
+
+					program.virtualAppConfig = config;
+					cb();
+				});
+			});
+		}
+
+		if (options.loadVirtualAppConfig && options.loadVirtualApp) {
+			initTasks.push(function(cb) {
+				log.debug("invoking api to fetch the virtual app");
+				api(program, {method: 'GET', '/apps/' + program.virtualAppConfig.appId}, function(err, app) {
+					if (err) return cb(err);
+
+					if (!app)
+						return cb("Application " + program.appId + " could not be found.");
+
+					program.virtualApp = app;
+				})
+			});
+		}
+
+		async.series(initTasks, function(err) {
+			if (err) {
+				log.error(err);
+				return process.exit();
+			}
 
 			// Run the command
 			require('../commands/' + name)(program, function(err, onKill) {
@@ -146,22 +172,5 @@ function commandAction(name, options) {
 				}
 			});
 		});
-
-		// Extend program with the values.
-		// _.each(results, function(value, key) {
-		// 	_.extend(program, value);
-		// });
-
-		setProgramDefaults();
-
-
 	};
 }
-
-// function setProgramDefaults() {
-//   // Default the base directories to the current directory
-//   if (program.debug)
-//     process.env.YOKE_DEBUG = '1';
-//   if (program.dev)
-//     process.env.AEROBATIC_ENV = 'dev';
-// }

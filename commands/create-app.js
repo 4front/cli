@@ -10,7 +10,7 @@ var inquirer = require('inquirer');
 var spawn = require('../lib/spawn');
 var api = require('../lib/api');
 var log = require('../lib/log');
-var npmConfig = require('../lib/npm-config');
+var virtualAppConfig = require('../lib/virtual-app-config');
 var helper = require('../lib/helper');
 
 require("simple-errors");
@@ -83,7 +83,7 @@ module.exports = function(program, done) {
 
 		// Update the package.json
 		tasks.push(function(cb) {
-			npmConfig(appDir, createdApp, cb);
+			virtualAppConfig.update(appDir, createdApp, cb);
 		});
 
 		async.series(tasks, function(err) {
