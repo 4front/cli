@@ -27,17 +27,21 @@
     "async": "^0.9.0",
     "chalk": "^1.0.0",
     "commander": "^2.7.1",
+    "cors": "^2.5.3",
     "debug": "^2.1.3",
     "express": "^4.12.3",
     "gaze": "^0.5.1",
     "glob": "^5.0.5",
     "inquirer": "^0.8.2",
     "lodash": "^3.6.0",
+    "mime": "^1.3.4",
+    "on-finished": "^2.2.0",
     "open": "0.0.5",
     "printf": "^0.2.1",
     "request": "^2.55.0",
     "rimraf": "^2.3.2",
     "simple-errors": "^1.0.1",
+    "tiny-lr": "^0.1.5",
     "unzip": "^0.1.11",
     "update-notifier": "^0.3.2",
     "url-join": "0.0.1"
@@ -47,6 +51,7 @@
     "istanbul": "^0.3.13",
     "mocha": "^2.2.4",
     "shortid": "^2.2.2",
-    "sinon": "^1.14.1"
+    "sinon": "^1.14.1",
+    "supertest": "^0.15.0"
   }
 }
