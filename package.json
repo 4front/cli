@@ -8,6 +8,10 @@
     "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter dot --check-leaks test/",
     "test-travis": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- --reporter spec --check-leaks test/"
   },
+  "bin": {
+    "4front": "bin/4front.js"
+  },
+  "preferGlobal": true,
   "keywords": [
     "cli",
     "4front"
