@@ -24,12 +24,15 @@ describe('sandboxServer', function() {
 		self = this;
 
 		this.program = {
-			platformUrl: 'https://apphost.com',
-			cwd: path.join(__dirname, './fixtures/sample-app'),
-			baseDir: path.join(__dirname, './fixtures/sample-app/app'),
-			jwt: {
-				token: '23523454'
+			profile: {
+				name: 'default',
+				platformUrl: 'https://apphost.com',
+				jwt: {
+					token: '23523454'
+				}
 			},
+			cwd: path.join(__dirname, './fixtures/sample-app'),
+			baseDir: path.join(__dirname, './fixtures/sample-app/app'),			
       virtualApp: {
         appId: shortid.generate()
       }
@@ -110,7 +113,7 @@ describe('sandboxServer', function() {
 				.get('/html-page/index.html?hash=asdfasdf&return=' + encodeURIComponent(redirectUrl))
 				.expect(302)
 				.expect(function(res) {
-          var apiUploadUrl = self.program.platformUrl + '/api/dev/' + self.program.virtualApp.appId + '/upload/index.html'
+          var apiUploadUrl = self.program.profile.platformUrl + '/api/dev/' + self.program.virtualApp.appId + '/upload/index.html'
 					assert.ok(request.post.calledWith(sinon.match({url: apiUploadUrl})));
 
           assert.equal(res.headers.location, redirectUrl);

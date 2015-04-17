@@ -27,9 +27,12 @@ describe('create-app', function() {
     self = this;
 
     this.program = {
-      platformUrl: 'https://apphost.com/',
-      jwt: {
-        token: '23523454'
+      profile: {
+        name: 'default',
+        platformUrl: 'https://apphost.com/',
+        jwt: {
+          token: '23523454'
+        }
       },
       baseDir: os.tmpdir()
     };
