@@ -32,7 +32,7 @@ describe('sandboxServer', function() {
 				}
 			},
 			cwd: path.join(__dirname, './fixtures/sample-app'),
-			baseDir: path.join(__dirname, './fixtures/sample-app/app'),			
+			baseDir: path.join(__dirname, './fixtures/sample-app/app'),
       virtualApp: {
         appId: shortid.generate()
       }
@@ -40,7 +40,7 @@ describe('sandboxServer', function() {
 
 		sinon.stub(request, 'post', function(options, callback) {
 			// Mock the create app post request
-			if (options.url.indexOf('/dev/upload')) {
+			if (options.url.indexOf('/dev/' + self.program.virtualApp.appId + '/upload')) {
         callback(null, {statusCode: 201});
 				// Create a dummy write stream
 				// var writeStream = new stream.Writable();
@@ -104,13 +104,13 @@ describe('sandboxServer', function() {
 			.end(done);
 	});
 
-	describe('html-page route', function() {
+	describe('/sandbox route', function() {
 		it('sha value different', function(done) {
 			var server = sandboxServer(this.program);
 			var redirectUrl = 'https://appname--dev.apphost.com/';
 
 			supertest(server)
-				.get('/html-page/index.html?hash=asdfasdf&return=' + encodeURIComponent(redirectUrl))
+				.get('/sandbox/index.html?hash=asdfasdf&return=' + encodeURIComponent(redirectUrl))
 				.expect(302)
 				.expect(function(res) {
           var apiUploadUrl = self.program.profile.platformUrl + '/api/dev/' + self.program.virtualApp.appId + '/upload/index.html'
@@ -127,7 +127,7 @@ describe('sandboxServer', function() {
 
       helper.getFileHash(path.join(this.program.baseDir, 'index.html'), function(hash) {
         supertest(server)
-  				.get("/html-page/index.html?hash=" + hash + "&return=" + encodeURIComponent(redirectUrl))
+  				.get("/sandbox/index.html?hash=" + hash + "&return=" + encodeURIComponent(redirectUrl))
   				.expect(302)
   				.expect(function(res) {
   					assert.isFalse(request.post.called);
@@ -136,5 +136,19 @@ describe('sandboxServer', function() {
   				.end(done);
       });
     });
+
+		it('matches file requiring pre-processing', function(done) {
+			var server = sandboxServer(this.program);
+			var redirectUrl = 'https://appname--dev.apphost.com/';
+
+      supertest(server)
+				.get("/sandbox/blog.html?return=" + encodeURIComponent(redirectUrl))
+				.expect(302)
+				.expect(function(res) {
+					assert.ok(request.post.calledWith(
+						sinon.match({body: sinon.match("<title>Blog</title>")})))
+				})
+				.end(done);
+		});
 	});
 });
