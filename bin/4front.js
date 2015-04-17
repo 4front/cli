@@ -27,8 +27,6 @@ updateNotifier({
 	updateCheckInterval: 1000 * 60 * 60 * 2 // Check for updates every 2 hours
 }).notify();
 
-program.configFilePath: path.join(osenv.home(), '.4front');
-
 program.version(require('../package.json').version)
 	.option('-d, --debug', 'Emit debug messages')
 	.option('--token [token]', 'JSON web token')
@@ -83,6 +81,14 @@ program
 	.action(commandAction('default-profile'));
 
 program
+	.command('install-preprocessor')
+	.action(commandAction('install-preprocessor', {
+		requireAuth: false,
+		loadVirtualApp: false,
+		loadVirtualAppConfig: false
+	}));
+
+program
 	.command('*')
 	.action(function(env) {
 		log.error("Not a valid command. Type 'yoke -h' for help.")
@@ -102,6 +108,11 @@ function commandAction(name, options) {
 			requireAuth: true,
 			loadVirtualAppConfig: true,
 			loadVirtualApp: true
+		});
+
+		_.defaults(program, {
+			configFilePath: path.join(osenv.home(), '.4front'),
+			cwd: process.cwd()
 		});
 
 		var initTasks = [];
