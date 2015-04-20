@@ -28,9 +28,9 @@ updateNotifier({
 }).notify();
 
 program.version(require('../package.json').version)
-	.option('-d, --debug', 'Emit debug messages')
+	.option('--debug', 'Emit debug messages')
 	.option('--token [token]', 'JSON web token')
-	.option('-p, --port [portNumber]', 'Port number to listen on')
+	.option('--port [portNumber]', 'Port number to listen on')
 	.option('--profile [profileName]', 'Specify which profile to use')
 
 program
@@ -40,6 +40,17 @@ program
 	.description('Create a new 4front app')
 	.action(commandAction('create-app', {
 		loadVirtualAppConfig: false
+	}));
+
+program
+	.option('--profile-name [profileName]', "The name of the profile")
+	.option('--profile-url [profileUrl]', "The url of the 4front instance")
+	.command('add-profile')
+	.description("Register a new profile")
+	.action(commandAction('add-profile', {
+		requireAuth: false,
+		loadVirtualAppConfig: false,
+		loadVirtualApp: false
 	}));
 
 program

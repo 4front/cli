@@ -121,7 +121,7 @@ describe('sandboxServer', function() {
 				.end(done);
 		});
 
-    it('sha value is the same', function(done) {
+    it('hash value is the same', function(done) {
       var server = sandboxServer(this.program);
 			var redirectUrl = 'https://appname--dev.apphost.com/';
 
@@ -149,6 +149,10 @@ describe('sandboxServer', function() {
 						sinon.match({body: sinon.match("<title>Blog</title>")})))
 				})
 				.end(done);
+		});
+
+		it('handles error for file extension with missing preprocessor', function(done) {
+			done();
 		});
 	});
 });
