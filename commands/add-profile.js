@@ -5,10 +5,10 @@ var _ = require('lodash');
 // Register a new profile in the 4front global config file
 module.exports = function(program, done) {
   if (_.isEmpty(program.profileName))
-    return done("Please provide a profile name with --name option");
+    return done("Please provide a profile name with --profile-name option");
 
   if (_.isEmpty(program.profileUrl))
-    return done("Please provide a profile url with --url option");
+    return done("Please provide a profile url with --profile-url option");
 
   // Check if this profile already exists
   if (_.any(program.globalConfig.profiles, {name: program.profileName}))
@@ -26,5 +26,10 @@ module.exports = function(program, done) {
 
   log.debug("writing global config to %s", program.globalConfigPath);
   var configJson = JSON.stringify(program.globalConfig, null, 2);
-  fs.writeFile(program.globalConfigPath, configJson, done);
+  fs.writeFile(program.globalConfigPath, configJson, function(err) {
+    if (err) return done(err);
+
+    log.success("Profile %s added to the .4front.json config", program.profileName);
+    done();
+  });
 };

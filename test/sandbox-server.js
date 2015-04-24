@@ -26,7 +26,7 @@ describe('sandboxServer', function() {
 		this.program = {
 			profile: {
 				name: 'default',
-				platformUrl: 'https://apphost.com',
+				url: 'https://apphost.com',
 				jwt: {
 					token: '23523454'
 				}
@@ -105,7 +105,7 @@ describe('sandboxServer', function() {
 	});
 
 	describe('/sandbox route', function() {
-		it('sha value different', function(done) {
+		it('hash value different', function(done) {
 			var server = sandboxServer(this.program);
 			var redirectUrl = 'https://appname--dev.apphost.com/';
 
@@ -113,7 +113,8 @@ describe('sandboxServer', function() {
 				.get('/sandbox/index.html?hash=asdfasdf&return=' + encodeURIComponent(redirectUrl))
 				.expect(302)
 				.expect(function(res) {
-          var apiUploadUrl = self.program.profile.platformUrl + '/api/dev/' + self.program.virtualApp.appId + '/upload/index.html'
+					debugger;
+          var apiUploadUrl = self.program.profile.url + '/api/dev/' + self.program.virtualApp.appId + '/upload/index.html'
 					assert.ok(request.post.calledWith(sinon.match({url: apiUploadUrl})));
 
           assert.equal(res.headers.location, redirectUrl);

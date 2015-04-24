@@ -27,27 +27,39 @@ updateNotifier({
 	updateCheckInterval: 1000 * 60 * 60 * 2 // Check for updates every 2 hours
 }).notify();
 
-program.version(require('../package.json').version)
+program.version(pkg.version)
 	.option('--debug', 'Emit debug messages')
 	.option('--token [token]', 'JSON web token')
-	.option('--port [portNumber]', 'Port number to listen on')
-	.option('--profile [profileName]', 'Specify which profile to use')
+	.option('--profile [profileName]', 'Name of the profile')
 
+// Create new application
 program
 	.option('--template-url [templateUrl]',
 		'URL to a zip file containing the code to scaffold the new app from.')
 	.command('create-app')
 	.description('Create a new 4front app')
 	.action(commandAction('create-app', {
+		requireAuth: true,
+		loadVirtualApp: false,
 		loadVirtualAppConfig: false
 	}));
 
+// Add a new profile
 program
-	.option('--profile-name [profileName]', "The name of the profile")
 	.option('--profile-url [profileUrl]', "The url of the 4front instance")
 	.command('add-profile')
 	.description("Register a new profile")
 	.action(commandAction('add-profile', {
+		requireAuth: false,
+		loadVirtualAppConfig: false,
+		loadVirtualApp: false
+	}));
+
+program
+	.option('--profile-name [profileName]', "The name of the profile to remove")
+	.command('remove-profile')
+	.description('Remove a profile from the 4front config')
+	.action(commandAction('remove-profile', {
 		requireAuth: false,
 		loadVirtualAppConfig: false,
 		loadVirtualApp: false
@@ -60,13 +72,20 @@ program
 		loadVirtualAppConfig: false
 	}));
 
+// Launch the developer sandbox
 program
 	.option('-o, --open', 'Open a browser to the local server')
 	.option('--release', 'Run in release mode')
+	.option('--port [portNumber]', 'Port number to listen on')
 	.command('sandbox')
 	.description("Start the developer sandbox environment")
-	.action(commandAction('sandbox'));
+	.action(commandAction('dev', {
+		requireAuth: true,
+		loadVirtualApp: true,
+		loadVirtualAppConfig: true
+	}));
 
+// Deploy app
 program
 	.option('-x, --unattended', 'Run in unattended mode')
 	.option('--version-name [versionName]', 'Version name')
@@ -76,7 +95,11 @@ program
 		'Set appId (in place of the one defined in package.json')
 	.command('deploy')
 	.description('Deploy a new version of the app')
-	.action(commandAction('deploy'));
+	.action(commandAction('deploy', {
+		requireAuth: true,
+		loadVirtualApp: true,
+		loadVirtualAppConfig: true
+	}));
 
 // Set the default profile
 program
@@ -116,7 +139,7 @@ function commandAction(name, commandOptions) {
 			require('../commands/' + name)(program, function(err, onKill) {
 				if (err) {
 					if (err instanceof Error)
-						log.error(err.stack || err.toString());
+						log.error(Error.publicMessage(err));
 					else if (_.isString(err))
 						log.error(err);
 

@@ -23,12 +23,12 @@ describe('cliInit', function() {
 	});
 
 	beforeEach(function() {
-    this.jwt = {
-			user: {
-				userId: shortid.generate()
-			},
-			token: 'adfasdfasdfasdf',
-			expires: Date.now() + (1000 * 60 * 30)
+    this.user = {
+			userId: shortid.generate(),
+			jwt: {
+				token: 'adfasdfasdfasdf',
+				expires: Date.now() + (1000 * 60 * 30)
+			}
 		};
 
     this.mockAnswers = {
@@ -39,7 +39,8 @@ describe('cliInit', function() {
 
     this.mockInquirer = require('./mock-inquirer')(this.mockAnswers);
 
-    sinon.stub(request, 'post').yields(null, {statusCode: 200}, this.jwt);
+    sinon.stub(request, 'post').yields(null, {statusCode: 200}, this.user);
+
 		sinon.stub(request, 'get', function(options, callback) {
 			if (options.path.indexOf('/apps/') == 0)
 				callback(null, {statusCode: 200}, {
@@ -54,7 +55,8 @@ describe('cliInit', function() {
 
 		this.commandOptions = {
 			loadVirtualApp: false,
-			loadVirtualAppConfig: false
+			loadVirtualAppConfig: false,
+			requireAuth: true
 		};
 
 		this.program = {
@@ -80,7 +82,7 @@ describe('cliInit', function() {
 			assert.isTrue(self.mockInquirer.wasAsked('username'));
 			assert.isTrue(self.mockInquirer.wasAsked('password'));
 
-			assert.equal(self.program.profile.platformUrl, self.mockAnswers.platformUrl);
+			assert.equal(self.program.profile.url, self.mockAnswers.platformUrl);
 
 			assert.isMatch(request.post.args[0][0], {
 				method: 'POST',
@@ -94,10 +96,10 @@ describe('cliInit', function() {
 			var globalConfig = JSON.parse(fs.readFileSync(self.program.globalConfigPath).toString());
 
 			assert.deepEqual(globalConfig.profiles[0], {
-				platformUrl: self.mockAnswers.platformUrl,
+				url: self.mockAnswers.platformUrl,
 				name: 'default',
 				default: true,
-				jwt: self.jwt
+				jwt: self.user.jwt
 			});
 
 			done();
@@ -122,16 +124,16 @@ describe('cliInit', function() {
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
 				name: 'host1',
-				platformUrl: "https://host1.com"
+				url: "https://host1.com"
 			}, {
 				name: 'host2',
-				platformUrl: "https://host2.com"
+				url: "https://host2.com"
 			}]
 		}, null, 2));
 
 		this.program.profile = 'host2';
 		cliInit(this.program, this.commandOptions, function(err) {
-			assert.equal(self.program.profile.platformUrl, 'https://host2.com');
+			assert.equal(self.program.profile.url, 'https://host2.com');
 
 			done();
 		});
@@ -142,16 +144,16 @@ describe('cliInit', function() {
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
 				name: 'host1',
-				platformUrl: "https://host1.com"
+				url: "https://host1.com"
 			}, {
 				name: 'host2',
-				platformUrl: "https://host2.com",
+				url: "https://host2.com",
 				default: true
 			}]
 		}, null, 2));
 
 		cliInit(this.program, this.commandOptions, function(err) {
-			assert.equal(self.program.profile.platformUrl, 'https://host2.com');
+			assert.equal(self.program.profile.url, 'https://host2.com');
 
 			done();
 		});
@@ -162,15 +164,15 @@ describe('cliInit', function() {
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
 				name: 'host1',
-				platformUrl: "https://host1.com"
+				url: "https://host1.com"
 			}, {
 				name: 'host2',
-				platformUrl: "https://host2.com"
+				url: "https://host2.com"
 			}]
 		}, null, 2));
 
 		cliInit(this.program, this.commandOptions, function(err) {
-			assert.equal(self.program.profile.platformUrl, 'https://host1.com');
+			assert.equal(self.program.profile.url, 'https://host1.com');
 
 			done();
 		});
@@ -181,7 +183,7 @@ describe('cliInit', function() {
 		// Write config file with an expired jwt
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
-				platformUrl: "https://host1.com",
+				url: "https://host1.com",
 				jwt: _.extend(this.jwt, {
 					expires: Date.now() - 1000
 				})
@@ -202,14 +204,14 @@ describe('cliInit', function() {
 
 	it('valid token skips login', function(done) {
     var self = this;
-		_.extend(this.jwt, {
+		_.extend(this.user.jwt, {
 			expires: Date.now() + (1000 * 60)
 		});
 
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
-				platformUrl: "https://host1.com",
-				jwt: this.jwt
+				url: "https://host1.com",
+				jwt: self.user.jwt
 			}]
 		}, null, 2));
 
@@ -220,7 +222,7 @@ describe('cliInit', function() {
 			assert.isFalse(self.mockInquirer.wasAsked('username'));
 			assert.isFalse(self.mockInquirer.wasAsked('password'));
 			assert.isFalse(request.post.called);
-			assert.deepEqual(self.program.profile.jwt, self.jwt);
+			assert.deepEqual(self.program.profile.jwt, self.user.jwt);
 
 			done();
 		});
@@ -292,8 +294,8 @@ describe('cliInit', function() {
 	function writeValidGlobalConfig(self) {
 		fs.writeFileSync(self.program.globalConfigPath, JSON.stringify({
 			profiles: [{
-				platformUrl: "https://host1.com",
-				jwt: self.jwt
+				url: "https://host1.com",
+				jwt: self.user.jwt
 			}]
 		}, null, 2));
 	}

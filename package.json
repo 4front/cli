@@ -12,6 +12,7 @@
     "4front": "bin/4front.js"
   },
   "preferGlobal": true,
+  "main": "bin/4front",
   "keywords": [
     "cli",
     "4front"

@@ -29,7 +29,7 @@ describe('create-app', function() {
     this.program = {
       profile: {
         name: 'default',
-        platformUrl: 'https://apphost.com/',
+        url: 'https://apphost.com/',
         jwt: {
           token: '23523454'
         }
@@ -100,7 +100,7 @@ describe('create-app', function() {
 
   it('collect input', function(done) {
     _.extend(this.mockAnswers, {
-      templateUrl: 'none',
+      templateUrl: 'blank',
       startingMode: 'scratch'
     });
 
@@ -176,10 +176,26 @@ describe('create-app', function() {
     });
   });
 
+  it('returns error when app directory already exists', function(done) {
+    _.extend(this.mockAnswers, {
+      appName: shortid.generate(),
+      startingMode: 'scratch',
+      templateUrl: 'blank'
+    });
+
+    fs.mkdirSync(path.join(self.program.baseDir, this.mockAnswers.appName));
+
+    createApp(this.program, function(err) {
+      assert.isNotNull(err);
+      assert.ok(/already exists/.test(err));
+      done();
+    });
+  });
+
   it('creates index.html when no template chosen', function(done) {
     _.extend(this.mockAnswers, {
       startingMode: 'scratch',
-      templateUrl: 'none'
+      templateUrl: 'blank'
     });
 
     createApp(this.program, function(err, createdApp) {

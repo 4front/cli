@@ -33,6 +33,14 @@ describe('add-profile', function() {
     });
   });
 
+  before(function() {
+    sinon.stub(log, 'write', _.noop());
+  });
+
+  after(function() {
+    log.write.restore();
+  });
+
   it('adds first profile', function(done) {
     this.program.profileName = 'production';
     this.program.profileUrl = 'https://4frontapps.com';

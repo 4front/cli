@@ -37,8 +37,13 @@ module.exports = function(program, done) {
 			// Create a new directory corresponding to the app name
 			appDir = path.join(program.baseDir, answers.appName);
 			tasks.push(function(cb) {
-				log.info("Making app directory %s", appDir);
-				fs.mkdir(appDir, cb);
+				fs.exists(appDir, function(exists) {
+					if (exists === true)
+						return cb("Directory " + appDir + " already exists.");
+
+					log.info("Making app directory %s", appDir);
+					fs.mkdir(appDir, cb);
+				});
 			});
 		}
 		else
@@ -46,7 +51,7 @@ module.exports = function(program, done) {
 
 		log.debug("Setting appDir to %s", appDir);
 
-		if (answers.templateUrl === 'none') {
+		if (answers.templateUrl === 'blank') {
 			// Make a new package.json from scratch
 			tasks.push(function(cb) {
 				createBlankStart(answers, appDir, cb);
@@ -93,10 +98,10 @@ module.exports = function(program, done) {
 				"\n\n";
 
 			if (answers.existing === true)
-				message += "To start developing run:\n$ 4front serve -o";
+				message += "To start developing run:\n$ 4front dev -o";
 			else
 				message += "To start developing run:\n$ cd " + createdApp.name +
-				"\n\nThen:\n$ 4front serve -o";
+				"\n\nThen:\n$ 4front dev -o";
 
 			message +=
 				"\n\nWhen you are ready to deploy, simply run:\n$ 4front deploy";
@@ -223,7 +228,7 @@ module.exports = function(program, done) {
 
 	function collectAppName(callback) {
 		log.messageBox(
-			"Please choose a name for your app which will be used as\nthe URL, i.e. http://<app_name>.aerobaticapp.com>.\nNames may only contain lowercase letters, numbers, \ndashes, and underscores."
+			"Please choose a name for your app which will be used as\nthe URL, i.e. http://<app_name>." + program.virtualHost + ".\nNames may only contain lowercase letters, numbers, \ndashes, and underscores."
 		);
 
 		var question = {
@@ -264,8 +269,8 @@ module.exports = function(program, done) {
 	function buildTemplateChoices(templates) {
 		var choices = [];
 		choices.push({
-			name: 'None',
-			value: 'none'
+			name: 'Blank',
+			value: 'blank'
 		});
 
 		templates.forEach(function(template, i) {
@@ -328,32 +333,18 @@ module.exports = function(program, done) {
 	}
 
 	function createBlankStart(answers, appDir, callback) {
-		// Create the bare minimum app code required to run the simulator
-		// which consists of a package.json with a name attribute and
-		// a boilerplate index.html file.
-		async.parallel([
-			function(cb) {
-				var packageJson = {
-					name: answers.appName,
-					_virtualApp: {}
-				};
+		// Create the bare minimum app code required which consists of a simple index.html page.
+		// The package.json will be created futher on in this flow.
+		var blankHtml = "<html>\n" +
+			"\t<head>\n" +
+			"\t\t<title>Blank 4front App</title>\n" +
+			"\t</head>\n" +
+			"\t<body>\n" +
+			"\t\t<h1>Blank 4front App</h1>\n" +
+			"\t</body>"
+		"</html>";
 
-				fs.writeFile(path.join(appDir, 'package.json'),
-					JSON.stringify(packageJson, null, 2), cb);
-			},
-			function(cb) {
-				var blankHtml = "<html>\n" +
-					"\t<head>\n" +
-					"\t\t<title>Blank 4front App</title>\n" +
-					"\t</head>\n" +
-					"\t<body>\n" +
-					"\t\t<h1>Blank 4front App</h1>\n" +
-					"\t</body>"
-				"</html>";
-
-				fs.writeFile(path.join(appDir, 'index.html'), blankHtml, cb);
-			}
-		], callback);
+		fs.writeFile(path.join(appDir, 'index.html'), blankHtml, callback);
 	}
 
 	function invokeCreateAppApi(answers, callback) {
