@@ -44,6 +44,17 @@ program
 		loadVirtualAppConfig: false
 	}));
 
+// List the applications for an organization
+program
+	.command('list-apps')
+	.description('List the applications for an organization')
+	.action(commandAction('list-apps', {
+		requireAuth: true,
+		loadVirtualApp: false,
+		loadVirtualAppConfig: false
+	}));
+
+
 // Add a new profile
 program
 	.option('--profile-url [profileUrl]', "The url of the 4front instance")
