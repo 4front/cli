@@ -88,9 +88,9 @@ program
 	.option('-o, --open', 'Open a browser to the local server')
 	.option('--release', 'Run in release mode')
 	.option('--port [portNumber]', 'Port number to listen on')
-	.command('sandbox')
+	.command('dev')
 	.description("Start the developer sandbox environment")
-	.action(commandAction('dev', {
+	.action(commandAction('dev-sandbox', {
 		requireAuth: true,
 		loadVirtualApp: true,
 		loadVirtualAppConfig: true
@@ -123,6 +123,9 @@ if (!process.argv.slice(2).length) {
 	program.outputHelp();
 }
 
+if (program.debug)
+	process.env.DEBUG = '1';
+
 process.on('exit', function(code) {
 	log.debug("Exiting");
 });
@@ -130,7 +133,6 @@ process.on('exit', function(code) {
 function commandAction(name, commandOptions) {
 	// Extend any options from program to options.
 	return function() {
-
 		_.defaults(program, {
 			globalConfigPath: path.join(osenv.home(), '.4front.json'),
 			build: 'debug',
@@ -147,6 +149,7 @@ function commandAction(name, commandOptions) {
 			}
 
 			// Run the command
+			log.debug("run command %s", name);
 			require('../commands/' + name)(program, function(err, onKill) {
 				if (err) {
 					if (err instanceof Error)
