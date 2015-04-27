@@ -98,7 +98,7 @@ program
 
 // Deploy app
 program
-	.option('-x, --unattended', 'Run in unattended mode')
+	.option('--unattended', 'Run in unattended mode')
 	.option('--version-name [versionName]', 'Version name')
 	.option('-m, --message [message]', 'Version message')
 	.option('-f, --force', 'Force all production traffic to the new version')

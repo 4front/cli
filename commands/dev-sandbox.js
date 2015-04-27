@@ -50,7 +50,14 @@ module.exports = function(program, done) {
   // like 'app' for raw source files and 'release' for build assets.
   // Do this after the previous step in case the release directory is
   // created for the first time by the build script.
-  asyncTasks.push(determineBaseDir);
+  asyncTasks.push(function(cb) {
+    basedir(program, function(err, baseDir) {
+      if (err) return cb(err);
+
+      log.debug("setting baseDir to %s", baseDir);
+      program.baseDir = baseDir;
+    });
+  });
 
   asyncTasks.push(function(cb) {
     if (program.virtualAppConfig.scripts.watch) {
