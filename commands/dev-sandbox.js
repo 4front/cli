@@ -5,6 +5,7 @@ var api = require('../lib/api');
 var querystring = require('querystring');
 var openBrowser = require('open');
 var log = require('../lib/log');
+var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
 var spawn = require('../lib/spawn');
 
@@ -18,30 +19,38 @@ module.exports = function(program, done) {
     // the app is also using a browser livereload plugin.
     liveReloadPort: 35728,
     cwd: process.cwd(),
-    baseDirs: {},
-    build: 'debug'
+    baseDirs: {
+    },
+    buildType: 'debug'
   });
 
   log.debug("running dev command");
 
   if (program.release === true)
-    program.build = 'release';
+    program.buildType = 'release';
 
   // Verify that the build type is valid.
-  if (_.contains(['debug', 'release'], program.build) === false) {
-    return done("Invalid build option value. Valid values are 'debug' and 'release'.");
+  if (_.contains(['debug', 'release'], program.buildType) === false) {
+    return done("Invalid build-type option value. Valid values are 'debug' and 'release'.");
   }
 
   var asyncTasks = [];
 
   // If serving in release mode, run the build step first.
   asyncTasks.push(function(cb) {
-    if (program.build === 'release' && program.virtualAppConfig.scripts.build)
+    if (program.buildType === 'release' && program.virtualAppConfig.scripts.build)
 
       spawn('npm', ['run-script', 'build'], cb);
     else
       cb();
   });
+
+  // Determine which directory should be the base from which relative
+  // file paths are resolved from. A common convention is to have a directory
+  // like 'app' for raw source files and 'release' for build assets.
+  // Do this after the previous step in case the release directory is
+  // created for the first time by the build script.
+  asyncTasks.push(determineBaseDir);
 
   asyncTasks.push(function(cb) {
     if (program.virtualAppConfig.scripts.watch) {
@@ -70,21 +79,17 @@ module.exports = function(program, done) {
 
   asyncTasks.push(function(cb) {
     // Start the localhost server
-    server = sandboxServer(program).listen(program.port, function(err) {
-      if (err) return cb(err);
-
-      // openBrowser(sandboxUrl);
-
-      cb();
-    });
+    server = sandboxServer(program).listen(program.port, cb);
   });
 
   async.series(asyncTasks, function(err) {
     if (err) return done(err);
 
     // Display a message that the app is ready for development at the sandboxUrl.
-    log.messageBox("The dev sandbox ready at the following url:");
+    log.messageBox("The dev sandbox was launched in your browser with url:");
     log.writeln(sandboxUrl);
+
+    openBrowser(sandboxUrl);
 
     done(null, function() {
       if (server)
@@ -92,10 +97,43 @@ module.exports = function(program, done) {
     });
   });
 
+  function determineBaseDir(callback) {
+		var baseDir;
+		if (_.isObject(program.virtualAppConfig.baseDir)) {
+			buildDirName = program.virtualAppConfig.baseDir[program.buildType];
+      if (!buildDirName)
+        return callback(Error.create("No baseDir specified for buildType " + program.buildType));
+
+      var baseDir = path.join(program.cwd, buildDirName);
+      fs.exists(baseDir, function(exists) {
+        if (exists === false)
+          return callback(Error.create("The specified baseDir " + buildDirName + " for buildType " + program.buildType + " does not exist."));
+
+        log.debug('setting baseDir to %s', baseDir);
+        program.baseDir = baseDir;
+        return callback(null);
+      });
+		}
+		// If there was no explicit baseDir specified in package.json, fallback to convention.
+		else {
+			var baseDirConventions = {
+				debug: ['src', 'app'],
+				release: ['dist', 'build']
+			};
+
+			helper.takeFirstExistsPath(program.cwd, baseDirConventions[program.buildType], function(err, baseDir) {
+        if (err) return callback(err);
+
+        log.debug('setting baseDir to %s', baseDir);
+        program.baseDir = baseDir;
+        callback(null);
+      });
+    }
+	}
+
   function buildSandboxUrl() {
-    debugger;
     var devOptions = {
-      buildType: program.build,
+      buildType: program.buildType,
       token: program.profile.jwt.token,
       port: program.port || 3000
     };
