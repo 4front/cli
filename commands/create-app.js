@@ -10,7 +10,7 @@ var inquirer = require('inquirer');
 var spawn = require('../lib/spawn');
 var api = require('../lib/api');
 var log = require('../lib/log');
-var virtualAppConfig = require('../lib/virtual-app-config');
+var manifest = require('../lib/manifest');
 var helper = require('../lib/helper');
 
 require("simple-errors");
@@ -88,7 +88,7 @@ module.exports = function(program, done) {
 
 		// Update the package.json
 		tasks.push(function(cb) {
-			virtualAppConfig.update(appDir, createdApp, cb);
+			manifest.update(appDir, createdApp, cb);
 		});
 
 		async.series(tasks, function(err) {
@@ -155,7 +155,7 @@ module.exports = function(program, done) {
 
 		// Question to choose which organization the app belongs
 		if (_.isArray(lookups.organizations) && lookups.organizations.length > 0) {
-			questions.push(helper.pickOrgQuestion(lookups.organizations, 
+			questions.push(helper.pickOrgQuestion(lookups.organizations,
 				"Which organization does this app belong?"));
 		}
 

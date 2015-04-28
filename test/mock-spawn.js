@@ -11,6 +11,11 @@ module.exports = function(cmd, args, options) {
 };
 
 function MockSpawn() {
+  this.stdout = new MockEmitter();
+  this.stderr = new MockEmitter();
 };
 
+function MockEmitter() {}
+
+util.inherits(MockEmitter, EventEmitter);
 util.inherits(MockSpawn, EventEmitter);

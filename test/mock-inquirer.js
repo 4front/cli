@@ -11,7 +11,6 @@ module.exports = function(mockAnswers) {
       async.eachSeries(questions, function(question, cb) {
         var shouldAsk = true;
         if (_.isFunction(question.when)) {
-          debugger;
           if (question.when(answers) === false)
             return cb();
         }

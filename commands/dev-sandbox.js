@@ -38,7 +38,7 @@ module.exports = function(program, done) {
 
   // If serving in release mode, run the build step first.
   asyncTasks.push(function(cb) {
-    if (program.buildType === 'release' && program.virtualAppConfig.scripts.build)
+    if (program.buildType === 'release' && program.virtualAppManifest.scripts.build)
 
       spawn('npm', ['run-script', 'build'], cb);
     else
@@ -60,7 +60,7 @@ module.exports = function(program, done) {
   });
 
   asyncTasks.push(function(cb) {
-    if (program.virtualAppConfig.scripts.watch) {
+    if (program.virtualAppManifest.scripts.watch) {
       log.debug("Found npm watch script");
       spawn('npm', ['run-script', 'watch'], {waitForExit: false}, cb);
     }
@@ -75,7 +75,7 @@ module.exports = function(program, done) {
     var requestOptions = {
 			method: 'post',
 			path: '/dev/' + program.virtualApp.appId + '/manifest',
-      body: _.omit(program.virtualAppConfig, 'scripts', 'appId')
+      body: _.omit(program.virtualAppManifest, 'scripts', 'appId')
 		};
 
 		api(program, requestOptions, cb);
@@ -106,8 +106,8 @@ module.exports = function(program, done) {
 
   function determineBaseDir(callback) {
 		var baseDir;
-		if (_.isObject(program.virtualAppConfig.baseDir)) {
-			buildDirName = program.virtualAppConfig.baseDir[program.buildType];
+		if (_.isObject(program.virtualAppManifest.baseDir)) {
+			buildDirName = program.virtualAppManifest.baseDir[program.buildType];
       if (!buildDirName)
         return callback(Error.create("No baseDir specified for buildType " + program.buildType));
 

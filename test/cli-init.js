@@ -55,7 +55,7 @@ describe('cliInit', function() {
 
 		this.commandOptions = {
 			loadVirtualApp: false,
-			loadVirtualAppConfig: false,
+			loadManifest: false,
 			requireAuth: true
 		};
 
@@ -254,7 +254,7 @@ describe('cliInit', function() {
 			this.program.cwd = this.tmpAppDir;
 			_.extend(this.commandOptions, {
 				loadVirtualApp: true,
-				loadVirtualAppConfig: true
+				loadManifest: true
 			});
 		});
 
@@ -264,12 +264,12 @@ describe('cliInit', function() {
 			});
 		});
 
-		it('loads virtualAppConfig and virtualApp', function(done) {
+		it('loads virtualAppManifest and virtualApp', function(done) {
 			cliInit(this.program, this.commandOptions, function(err) {
 				if (err) return done(err);
 
 				assert.isTrue(request.get.calledWith(sinon.match({path: '/apps/' + self.appId})));
-				assert.equal(self.program.virtualAppConfig.appId, self.appId);
+				assert.equal(self.program.virtualAppManifest.appId, self.appId);
 				assert.equal(self.program.virtualApp.appId, self.appId);
 
 				done();
@@ -283,7 +283,7 @@ describe('cliInit', function() {
 				if (err) return done(err);
 
 				assert.isTrue(request.get.calledWith(sinon.match({path: '/apps/' + self.program.appId})));
-				assert.equal(self.program.virtualAppConfig.appId, self.program.appId);
+				assert.equal(self.program.virtualAppManifest.appId, self.program.appId);
 				assert.equal(self.program.virtualApp.appId, self.program.appId);
 
 				done();

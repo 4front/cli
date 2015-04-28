@@ -12,7 +12,6 @@ var log = require('../lib/log');
 var updateNotifier = require('update-notifier');
 var shortid = require('shortid');
 var cliInit = require('../lib/cli-init');
-var virtualAppConfig = require('../lib/virtual-app-config');
 var pkg = require('../package.json');
 
 require('simple-errors');
@@ -41,7 +40,7 @@ program
 	.action(commandAction('create-app', {
 		requireAuth: true,
 		loadVirtualApp: false,
-		loadVirtualAppConfig: false
+		loadManifest: false
 	}));
 
 // List the applications for an organization
@@ -51,7 +50,7 @@ program
 	.action(commandAction('list-apps', {
 		requireAuth: true,
 		loadVirtualApp: false,
-		loadVirtualAppConfig: false
+		loadManifest: false
 	}));
 
 
@@ -62,7 +61,7 @@ program
 	.description("Register a new profile")
 	.action(commandAction('add-profile', {
 		requireAuth: false,
-		loadVirtualAppConfig: false,
+		loadManifest: false,
 		loadVirtualApp: false
 	}));
 
@@ -72,7 +71,7 @@ program
 	.description('Remove a profile from the 4front config')
 	.action(commandAction('remove-profile', {
 		requireAuth: false,
-		loadVirtualAppConfig: false,
+		loadManifest: false,
 		loadVirtualApp: false
 	}));
 
@@ -80,7 +79,7 @@ program
 	.command('bind-app')
 	.description('Bind the current directory to an existing 4front app')
 	.action(commandAction('appBind', {
-		loadVirtualAppConfig: false
+		loadManifest: false
 	}));
 
 // Launch the developer sandbox
@@ -93,7 +92,7 @@ program
 	.action(commandAction('dev-sandbox', {
 		requireAuth: true,
 		loadVirtualApp: true,
-		loadVirtualAppConfig: true
+		loadManifest: true
 	}));
 
 // Deploy app
@@ -109,7 +108,7 @@ program
 	.action(commandAction('deploy', {
 		requireAuth: true,
 		loadVirtualApp: true,
-		loadVirtualAppConfig: true
+		loadManifest: true
 	}));
 
 // Set the default profile

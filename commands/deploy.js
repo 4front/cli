@@ -46,7 +46,7 @@ module.exports = function(program, done) {
   // Run "npm run-script build"
   asyncTasks.push(function(cb) {
     if (inputAnswers.runBuildStep === true)
-      spawn('npm', ['run-script', 'build'], cb);
+      spawn('npm', ['run-script', 'build'], {cwd: program.baseDir}, cb);
     else
       cb();
   });
@@ -71,7 +71,6 @@ module.exports = function(program, done) {
   asyncTasks.push(activateVersion);
 
   async.series(asyncTasks, function(err) {
-    debugger;
     if (err) return done(err);
 
     log.success("New version %s deployed and available at: %s", newVersion.versionId, newVersion.previewUrl);
@@ -98,10 +97,10 @@ module.exports = function(program, done) {
     log.messageBox("Deploy a new version of the app.");
 
     // Use inquirer to collect input.
-    questions = [
+    var questions = [
       {
         type: 'input',
-        name: 'version',
+        name: 'name',
         message: 'Version name (leave blank to auto-generate):',
         validate: validateVersionName
       },
@@ -115,7 +114,7 @@ module.exports = function(program, done) {
         name: 'runBuildStep',
         message: 'Run "npm run-script build?"',
         when: function() {
-          return _.isEmpty(program.virtualAppConfig.scripts.build) === false;
+          return _.isEmpty(program.virtualAppManifest.scripts.build) === false;
         },
         default: true
       },
@@ -152,18 +151,15 @@ module.exports = function(program, done) {
 
     async.each(deployFiles, function(file, cb) {
       var fullPath = path.join(program.baseDir, file);
-      // var relativePath = path.relative(program.cwd, fullPath);
 
       // Ensure the slashes are forward in the relative path
-      var uploadPath = urljoin(newVersion.versionId, file.replace(/\\/g, '/'));
+      var uploadPath = file.replace(/\\/g, '/');
       uploadCount++;
 
-      // var compress = shouldCompress(file);
-      compress = false;
+      var compress = shouldCompress(file);
       uploadFile(fullPath, uploadPath, compress, cb);
     }, function(err) {
       if (err) return callback(err);
-        // return callback(Error.create("Error deploying source files", {}, err));
 
       debug('Done uploading %s files', uploadCount);
       callback();
@@ -212,7 +208,7 @@ module.exports = function(program, done) {
           return callback(err);
         })
         .on('finish', function() {
-          debug('done writing gzip file')
+          debug('done writing gzip file');
           return upload(gzipFile);
         });
     }
@@ -224,15 +220,15 @@ module.exports = function(program, done) {
   function activateVersion(callback) {
     var versionData = {};
 
-    if (program.force === true) {
-      versionUpdateData.forceAllTrafficToNewVersion = '1';
+    if (inputAnswers.force === true) {
+      versionData.forceAllTrafficToNewVersion = true;
       if (program.virtualApp.trafficControlEnabled === true)
         log.info(chalk.yellow('Forcing all traffic to the new version.'));
     }
 
     var requestOptions = {
-      method: 'POST',
-      path: '/apps/' + program.virtualApp.appId + '/versions/' + newVersion.versionId + '/activate',
+      method: 'PUT',
+      path: '/apps/' + program.virtualApp.appId + '/versions/' + newVersion.versionId + '/complete',
       json: versionData
     };
 
@@ -254,7 +250,7 @@ module.exports = function(program, done) {
       json: {
         name: inputAnswers.name,
         message: inputAnswers.message,
-        manifest: program.virtualAppConfig
+        manifest: program.virtualAppManifest
       }
     };
 

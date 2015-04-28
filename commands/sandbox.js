@@ -27,7 +27,7 @@ module.exports = function(program, done) {
 
   // If serving in release mode, run the build step first.
   asyncTasks.push(function(cb) {
-    if (program.build === 'release' && program.virtualAppConfig.scripts.build)
+    if (program.build === 'release' && program.virtualAppManifest.scripts.build)
 
       spawn('npm', ['run-script', 'build'], cb);
     else
@@ -35,7 +35,7 @@ module.exports = function(program, done) {
   });
 
   asyncTasks.push(function(cb) {
-    if (program.virtualAppConfig.scripts.watch) {
+    if (program.virtualAppManifest.scripts.watch) {
       log.debug("Found npm watch script");
       spawn('npm', ['run-script', 'watch'], {waitForExit: false}, cb);
     }
