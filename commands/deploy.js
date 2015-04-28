@@ -63,7 +63,7 @@ module.exports = function(program, done) {
 
   asyncTasks.push(createNewVersion);
   asyncTasks.push(deployFiles);
-  asyncTasks.push(markVersionReady);
+  asyncTasks.push(activateVersion);
 
   async.series(asyncTasks, function(err) {
     if (err) return done(err);

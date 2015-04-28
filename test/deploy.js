@@ -38,7 +38,8 @@ describe('create-app', function() {
         baseDir: {
           release: os.tmpdir()
         }
-      }
+      },
+      cwd: path.join(os.tmpdir(), 'test-app')
     };
 
     this.mockAnswers = {
@@ -74,18 +75,35 @@ describe('create-app', function() {
     });
 
     sinon.stub(inquirer, 'prompt', this.mockInquirer.prompt);
-    sinon.stub(childProcess, 'spawn', mockSpawn);
 
-    rimraf(path.join(os.tmpdir(), 'test-app'), done);
+    async.series([
+      function(cb) {
+        rimraf(self.program.cwd, cb);
+      },
+      function(cb) {
+        fs.mkdir(self.program.cwd, cb);
+      },
+      function(cb) {
+        fs.writeFile(path.join(self.program.cwd, 'index.html'), '<html>', cb);
+      },
+      function(cb) {
+        fs.writeFile(path.join(self.program.cwd, 'app.js'), '// app.js', cb);
+      }
+    ], done);
 	});
 
   afterEach(function() {
     request.post.restore();
-    request.head.restore();
-    request.get.restore();
+    request.put.restore();
     inquirer.prompt.restore();
     log.write.restore();
-    childProcess.spawn.restore();
   });
 
+  it('deploys new version', function(done) {
+    deploy(this.program, function(err) {
+      if (err) return done(err);
+
+      done();
+    });
+  });
 });
