@@ -6,10 +6,12 @@ var _ = require('lodash');
 var path = require('path');
 var parseUrl = require('url').parse;
 var rimraf = require('rimraf');
+var through = require('through2');
 var log = require('../lib/log');
 var fs = require('fs');
 var request = require('request');
 var inquirer = require('inquirer');
+var debug = require('debug')('4front:cli:test');
 var deploy = require('../commands/deploy');
 var os = require('os');
 var mockSpawn = require('./mock-spawn');
@@ -17,7 +19,7 @@ var mockInquirer = require('./mock-inquirer');
 
 require('dash-assert');
 
-describe('create-app', function() {
+describe('deploy', function() {
   var self;
 
 	beforeEach(function(done) {
@@ -35,9 +37,7 @@ describe('create-app', function() {
         appId: shortid.generate()
       },
       virtualAppConfig: {
-        baseDir: {
-          release: os.tmpdir()
-        }
+        scripts: {}
       },
       cwd: path.join(os.tmpdir(), 'test-app')
     };
@@ -62,12 +62,27 @@ describe('create-app', function() {
 
     // Stub the POST api calls to deploy a file and create a new version.
     sinon.stub(request, 'post', function(options, callback) {
+      debugger;
       // Mock the create app post request
-      if (options.url.indexOf('/deploy')) {
-        callback(null, {statusCode: 201});
+      if (options.url.indexOf('/deploy') > 0) {
+        // Create a dummy write stream
+        return through(function(chunk, enc, cb) {
+          debug('faux write chunk %s', chunk);
+          cb();
+        }, function() {
+          callback(null, {statusCode: 201});
+        });
+
+				// var writeStream = new stream.Writable();
+				// writeStream._write = function(chunk, encoding, done) {
+				// 	done();
+				// };
+				// return writeStream;
+        // callback(null, {statusCode: 201});
       }
       else {
-        callback(null, _.extend(options.json, {
+        debug("mock create version api call");
+        callback(null, {statusCode: 201}, _.extend(options.json, {
           appId: self.program.virtualApp.appId,
           versionId: shortid.generate()
         }));

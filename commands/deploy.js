@@ -2,6 +2,7 @@ var chalk = require('chalk');
 var util = require('util');
 var async = require('async');
 var request = require('request');
+var inquirer = require('inquirer');
 var _ = require('lodash');
 var fs = require('fs');
 var os = require('os');
@@ -11,6 +12,7 @@ var glob = require("glob");
 var urljoin = require('url-join');
 var open = require('open');
 var shortid = require('shortid');
+var debug = require('debug')('4front:cli:deploy');
 var spawn = require('../lib/spawn');
 var api = require('../lib/api');
 var log = require('../lib/log');
@@ -19,11 +21,11 @@ var helper = require('../lib/helper');
 
 require("simple-errors");
 
-var compressExtensions = ['.html', '.css', '.js', '.json', '.txt', '.svg'];
+var compressExtensions = ['.css', '.js', '.json', '.txt', '.svg'];
 
 module.exports = function(program, done) {
   // Create a new version object
-  var newVersion, asyncTasks = [];
+  var newVersion, asyncTasks = [], inputAnswers = {};
 
   // Force buildType to be release
   program.buildType = 'release';
@@ -32,17 +34,18 @@ module.exports = function(program, done) {
   asyncTasks.push(function(cb) {
     basedir(program, function(err, baseDir) {
       if (err) return cb(err);
+
+      debug('setting baseDir to %s', baseDir);
       program.baseDir = baseDir;
+      cb();
     });
   });
 
-  asyncTasks.push(function(cb) {
-    collectVersionInputs(cb);
-  });
+  asyncTasks.push(collectVersionInputs);
 
   // Run "npm run-script build"
   asyncTasks.push(function(cb) {
-    if (runBuildStep === true)
+    if (inputAnswers.runBuildStep === true)
       spawn('npm', ['run-script', 'build'], cb);
     else
       cb();
@@ -55,9 +58,11 @@ module.exports = function(program, done) {
       nodir: true
     };
 
+    debug('globbing up files');
     glob("**/*.*", globOptions, function(err, matches) {
       if (err) return cb(err);
       deployFiles = matches;
+      cb();
     });
   });
 
@@ -66,6 +71,7 @@ module.exports = function(program, done) {
   asyncTasks.push(activateVersion);
 
   async.series(asyncTasks, function(err) {
+    debugger;
     if (err) return done(err);
 
     log.success("New version %s deployed and available at: %s", newVersion.versionId, newVersion.previewUrl);
@@ -80,9 +86,11 @@ module.exports = function(program, done) {
     if (program.unattended === true) {
       log.debug("Running in unattended mode");
       // Assuming that a CI process would have already run the build step.
-      runBuildStep = false;
-      versionData.name = program.versionName;
-      versionData.message = program.message;
+      _.extend(inputAnswers, {
+        runBuildStep: false,
+        name: program.versionName,
+        message: program.message
+      });
 
       return callback();
     }
@@ -107,7 +115,7 @@ module.exports = function(program, done) {
         name: 'runBuildStep',
         message: 'Run "npm run-script build?"',
         when: function() {
-          return _.isEmpty(program.npmScripts.build) === false;
+          return _.isEmpty(program.virtualAppConfig.scripts.build) === false;
         },
         default: true
       },
@@ -123,16 +131,8 @@ module.exports = function(program, done) {
       }
     ];
 
-    program.inquirer.prompt(questions, function(answers) {
-      runBuildStep = answers.runBuildStep;
-
-      // If trafficControl is not enabled on the app, then always force traffic
-      // to the new version.
-      program.force = program.virtualApp.trafficControlEnabled !== true ? true : answers.force;
-      versionData.name = answers.version;
-      versionData.message = answers.message;
-
-      log.blankLine();
+    inquirer.prompt(questions, function(answers) {
+      _.extend(inputAnswers, answers);
       callback();
     });
   }
@@ -151,38 +151,31 @@ module.exports = function(program, done) {
     var uploadCount = 0;
 
     async.each(deployFiles, function(file, cb) {
-      var filePath = path.relative(program.cwd, path.join(deployFiles.baseDir, file));
+      var fullPath = path.join(program.baseDir, file);
+      // var relativePath = path.relative(program.cwd, fullPath);
 
       // Ensure the slashes are forward in the relative path
-      var relativePath = file.replace(/\\/g, '/');
-
-      var uploadPath = urljoin(versionData.versionId, relativePath);
+      var uploadPath = urljoin(newVersion.versionId, file.replace(/\\/g, '/'));
       uploadCount++;
 
-      var compress = shouldCompress(file);
-      uploadFile(filePath, uploadPath, compress, cb);
+      // var compress = shouldCompress(file);
+      compress = false;
+      uploadFile(fullPath, uploadPath, compress, cb);
     }, function(err) {
-      if (err)
-        return callback(Error.create("Error deploying source files", {}, err));
+      if (err) return callback(err);
+        // return callback(Error.create("Error deploying source files", {}, err));
 
-      log.info('Done uploading %s files', uploadCount);
+      debug('Done uploading %s files', uploadCount);
       callback();
     });
   }
 
   function shouldCompress(filePath) {
-    // Don't compress any of the pages that are served from the app platform rather than the CDN.
-    var platformFiles = ['index.html', 'login.html', 'robots.txt', 'sitemap.xml'];
-    if (_.contains(platformFiles, filePath) === true) {
-      log.debug("Do not compress file %s", filePath);
-      return false;
-    }
-
     return _.contains(compressExtensions, path.extname(filePath));
   }
 
   function uploadFile(filePath, uploadPath, compress, callback) {
-    log.debug("Start upload of " + filePath);
+    debug("Start upload of " + filePath);
 
     var requestOptions = {
       path: urljoin('apps', program.virtualApp.appId, 'versions',
@@ -194,20 +187,24 @@ module.exports = function(program, done) {
     function upload(file) {
       log.info('Deploying file /%s', uploadPath);
       fs.stat(file, function(err, stat) {
+        if (err) return callback(err);
+
         requestOptions.headers['Content-Length'] = stat.size;
-        return fs.createReadStream(file)
+        fs.createReadStream(file)
           .pipe(api(program, requestOptions, callback));
       });
     }
 
     if (compress === true) {
       log.info('Compressing file ' + filePath);
+      debug('Compressing file ' + filePath);
       requestOptions.headers['Content-Type'] = 'application/gzip';
 
       // Use a random file name to avoid chance of collisions
       var gzipFile = path.join(os.tmpdir(), shortid.generate() + path.extname(filePath) + '.gz');
 
       log.debug("Writing to gzipFile %s", gzipFile);
+      debug("Writing to gzipFile %s", gzipFile);
       fs.createReadStream(filePath)
         .pipe(zlib.createGzip())
         .pipe(fs.createWriteStream(gzipFile))
@@ -215,6 +212,7 @@ module.exports = function(program, done) {
           return callback(err);
         })
         .on('finish', function() {
+          debug('done writing gzip file')
           return upload(gzipFile);
         });
     }
@@ -246,7 +244,7 @@ module.exports = function(program, done) {
   }
 
   // Create the new version in a non-ready state.
-  function createNewVersion(name, message, callback) {
+  function createNewVersion(callback) {
     // Create the new version
     log.info('Creating new version');
 
@@ -254,13 +252,14 @@ module.exports = function(program, done) {
       method: 'POST',
       path: '/apps/' + program.virtualApp.appId + '/versions',
       json: {
-        name: name,
-        message: message,
+        name: inputAnswers.name,
+        message: inputAnswers.message,
         manifest: program.virtualAppConfig
       }
     };
 
     api(program, requestOptions, function(err, version) {
+      debug("new version created");
       if (err) return callback(err);
       newVersion = version;
       callback();
