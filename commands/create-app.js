@@ -323,14 +323,15 @@ module.exports = function(program, done) {
 	function createBlankStart(answers, appDir, callback) {
 		// Create the bare minimum app code required which consists of a simple index.html page.
 		// The package.json will be created futher on in this flow.
-		var blankHtml = "<html>\n" +
-			"\t<head>\n" +
-			"\t\t<title>Blank 4front App</title>\n" +
-			"\t</head>\n" +
-			"\t<body>\n" +
-			"\t\t<h1>Blank 4front App</h1>\n" +
-			"\t</body>"
-		"</html>";
+		var blankHtml = "<!DOCTYPE html>\n" +
+			"<html>\n" +
+				"\t<head>\n" +
+				"\t\t<title>Blank 4front App</title>\n" +
+				"\t</head>\n" +
+				"\t<body>\n" +
+				"\t\t<h1>Blank 4front App</h1>\n" +
+				"\t</body>"
+			"</html>";
 
 		fs.writeFile(path.join(appDir, 'index.html'), blankHtml, callback);
 	}

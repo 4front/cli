@@ -1,4 +1,8 @@
+var http = require('http');
+var https = require('https');
 var _ = require('lodash');
+var fs = require('fs');
+var path = require('path');
 var async = require('async');
 var formatUrl = require('url').format;
 var api = require('../lib/api');
@@ -8,19 +12,13 @@ var log = require('../lib/log');
 var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
 var spawn = require('../lib/spawn');
+var basedir = require('../lib/basedir');
 
 module.exports = function(program, done) {
-  debugger;
-
   _.defaults(program, {
     port: 3000,
     liveReload: true,
-    // Intentionally not using standard livereload port to avoid collisions if
-    // the app is also using a browser livereload plugin.
-    liveReloadPort: 35728,
     cwd: process.cwd(),
-    baseDirs: {
-    },
     buildType: 'debug'
   });
 
@@ -28,6 +26,8 @@ module.exports = function(program, done) {
 
   if (program.release === true)
     program.buildType = 'release';
+
+  program.virtualApp.requireSsl = true;
 
   // Verify that the build type is valid.
   if (_.contains(['debug', 'release'], program.buildType) === false) {
@@ -56,6 +56,7 @@ module.exports = function(program, done) {
 
       log.debug("setting baseDir to %s", baseDir);
       program.baseDir = baseDir;
+      cb();
     });
   });
 
@@ -85,8 +86,22 @@ module.exports = function(program, done) {
   var sandboxUrl = buildSandboxUrl();
 
   asyncTasks.push(function(cb) {
-    // Start the localhost server
-    server = sandboxServer(program).listen(program.port, cb);
+    var localhost = sandboxServer(program);
+
+    if (program.virtualApp.requireSsl) {
+      // Using the same SSL cert from the grunt server task
+      httpsOptions = {
+        key: fs.readFileSync(path.join(__dirname, '../certs', 'server.key')).toString(),
+        cert: fs.readFileSync(path.join(__dirname, '../certs', 'server.crt')).toString(),
+        ca: fs.readFileSync(path.join(__dirname, '../certs', 'ca.crt')).toString(),
+        passphrase: 'grunt',
+        rejectUnauthorized: false
+      };
+
+      https.createServer(httpsOptions, localhost).listen(program.port, cb);
+    }
+    else
+      localhost.listen(program.port, cb);
   });
 
   async.series(asyncTasks, function(err) {
@@ -104,40 +119,6 @@ module.exports = function(program, done) {
     });
   });
 
-  function determineBaseDir(callback) {
-		var baseDir;
-		if (_.isObject(program.virtualAppManifest.baseDir)) {
-			buildDirName = program.virtualAppManifest.baseDir[program.buildType];
-      if (!buildDirName)
-        return callback(Error.create("No baseDir specified for buildType " + program.buildType));
-
-      var baseDir = path.join(program.cwd, buildDirName);
-      fs.exists(baseDir, function(exists) {
-        if (exists === false)
-          return callback(Error.create("The specified baseDir " + buildDirName + " for buildType " + program.buildType + " does not exist."));
-
-        log.debug('setting baseDir to %s', baseDir);
-        program.baseDir = baseDir;
-        return callback(null);
-      });
-		}
-		// If there was no explicit baseDir specified in package.json, fallback to convention.
-		else {
-			var baseDirConventions = {
-				debug: ['src', 'app'],
-				release: ['dist', 'build']
-			};
-
-			helper.takeFirstExistsPath(program.cwd, baseDirConventions[program.buildType], function(err, baseDir) {
-        if (err) return callback(err);
-
-        log.debug('setting baseDir to %s', baseDir);
-        program.baseDir = baseDir;
-        callback(null);
-      });
-    }
-	}
-
   function buildSandboxUrl() {
     var devOptions = {
       buildType: program.buildType,
@@ -147,7 +128,6 @@ module.exports = function(program, done) {
 
     if (program.liveReload) {
       devOptions.liveReload = 1;
-      devOptions.liveReloadPort = program.liveReloadPort;
     }
 
     return formatUrl({
