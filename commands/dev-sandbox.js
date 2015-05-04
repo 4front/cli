@@ -1,4 +1,8 @@
+var http = require('http');
+var https = require('https');
 var _ = require('lodash');
+var fs = require('fs');
+var path = require('path');
 var async = require('async');
 var formatUrl = require('url').format;
 var api = require('../lib/api');
@@ -9,19 +13,13 @@ var log = require('../lib/log');
 var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
 var spawn = require('../lib/spawn');
+var basedir = require('../lib/basedir');
 
 module.exports = function(program, done) {
-  debugger;
-
   _.defaults(program, {
     port: 3000,
     liveReload: true,
-    // Intentionally not using standard livereload port to avoid collisions if
-    // the app is also using a browser livereload plugin.
-    liveReloadPort: 35728,
     cwd: process.cwd(),
-    baseDirs: {
-    },
     buildType: 'debug'
   });
 
@@ -29,6 +27,8 @@ module.exports = function(program, done) {
 
   if (program.release === true)
     program.buildType = 'release';
+
+  program.virtualApp.requireSsl = true;
 
   // Verify that the build type is valid.
   if (_.contains(['debug', 'release'], program.buildType) === false) {
@@ -57,6 +57,7 @@ module.exports = function(program, done) {
 
       log.debug("setting baseDir to %s", baseDir);
       program.baseDir = baseDir;
+      cb();
     });
   });
 
@@ -86,8 +87,22 @@ module.exports = function(program, done) {
   var sandboxUrl = buildSandboxUrl();
 
   asyncTasks.push(function(cb) {
-    // Start the localhost server
-    server = sandboxServer(program).listen(program.port, cb);
+    var localhost = sandboxServer(program);
+
+    if (program.virtualApp.requireSsl) {
+      // Using the same SSL cert from the grunt server task
+      httpsOptions = {
+        key: fs.readFileSync(path.join(__dirname, '../certs', 'server.key')).toString(),
+        cert: fs.readFileSync(path.join(__dirname, '../certs', 'server.crt')).toString(),
+        ca: fs.readFileSync(path.join(__dirname, '../certs', 'ca.crt')).toString(),
+        passphrase: 'grunt',
+        rejectUnauthorized: false
+      };
+
+      https.createServer(httpsOptions, localhost).listen(program.port, cb);
+    }
+    else
+      localhost.listen(program.port, cb);
   });
 
   async.series(asyncTasks, function(err) {
@@ -114,7 +129,6 @@ module.exports = function(program, done) {
 
     if (program.liveReload) {
       devOptions.liveReload = 1;
-      devOptions.liveReloadPort = program.liveReloadPort;
     }
 
     return formatUrl({

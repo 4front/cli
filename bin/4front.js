@@ -122,9 +122,6 @@ if (!process.argv.slice(2).length) {
 	program.outputHelp();
 }
 
-if (program.debug)
-	process.env.DEBUG = '1';
-
 process.on('exit', function(code) {
 	log.debug("Exiting");
 });
