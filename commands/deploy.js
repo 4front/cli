@@ -12,7 +12,7 @@ var glob = require("glob");
 var urljoin = require('url-join');
 var open = require('open');
 var shortid = require('shortid');
-var console.log = require('debug')('4front:cli:deploy');
+var debug = require('debug')('4front:cli:deploy');
 var spawn = require('../lib/spawn');
 var api = require('../lib/api');
 var log = require('../lib/log');
@@ -35,7 +35,7 @@ module.exports = function(program, done) {
     basedir(program, function(err, baseDir) {
       if (err) return cb(err);
 
-      console.log('setting baseDir to %s', baseDir);
+      debug('setting baseDir to %s', baseDir);
       program.baseDir = baseDir;
       cb();
     });
@@ -58,7 +58,7 @@ module.exports = function(program, done) {
       nodir: true
     };
 
-    console.log('globbing up files');
+    debug('globbing up files');
     glob("**/*.*", globOptions, function(err, matches) {
       if (err) return cb(err);
       deployFiles = matches;
@@ -161,7 +161,7 @@ module.exports = function(program, done) {
     }, function(err) {
       if (err) return callback(err);
 
-      console.log('Done uploading %s files', uploadCount);
+      debug('done uploading %s files', uploadCount);
       callback();
     });
   }
@@ -171,7 +171,7 @@ module.exports = function(program, done) {
   }
 
   function uploadFile(filePath, uploadPath, compress, callback) {
-    console.log("Start upload of " + filePath);
+    debug("start upload of %s");
 
     var requestOptions = {
       path: urljoin('apps', program.virtualApp.appId, 'versions',
@@ -192,15 +192,13 @@ module.exports = function(program, done) {
     }
 
     if (compress === true) {
-      log.info('Compressing file ' + filePath);
-      console.log('Compressing file ' + filePath);
+      debug('compressing file ' + filePath);
       requestOptions.headers['Content-Type'] = 'application/gzip';
 
       // Use a random file name to avoid chance of collisions
       var gzipFile = path.join(os.tmpdir(), shortid.generate() + path.extname(filePath) + '.gz');
 
-      log.debug("Writing to gzipFile %s", gzipFile);
-      console.log("Writing to gzipFile %s", gzipFile);
+      debug("Writing to gzipFile %s", gzipFile);
       fs.createReadStream(filePath)
         .pipe(zlib.createGzip())
         .pipe(fs.createWriteStream(gzipFile))
@@ -208,7 +206,7 @@ module.exports = function(program, done) {
           return callback(err);
         })
         .on('finish', function() {
-          console.log('done writing gzip file');
+          debug('done writing gzip file');
           return upload(gzipFile);
         });
     }
@@ -255,7 +253,7 @@ module.exports = function(program, done) {
     };
 
     api(program, requestOptions, function(err, version) {
-      console.log("new version created");
+      debug("new version created");
       if (err) return callback(err);
       newVersion = version;
       callback();
