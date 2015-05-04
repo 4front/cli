@@ -19,7 +19,7 @@ var basedir = require('../lib/basedir');
 module.exports = function(program, done) {
   _.defaults(program, {
     port: 3000,
-    liveReload: false,
+    liveReload: true,
     cwd: process.cwd(),
     buildType: 'debug'
   });
@@ -39,7 +39,6 @@ module.exports = function(program, done) {
   // If serving in release mode, run the build step first.
   asyncTasks.push(function(cb) {
     if (program.buildType === 'release' && program.virtualAppManifest.scripts.build)
-
       spawn('npm', ['run-script', 'build'], cb);
     else
       cb();
@@ -134,7 +133,7 @@ module.exports = function(program, done) {
       port: program.port || 3000
     };
 
-    if (program.liveReload) {
+    if (program.liveReload === true) {
       devOptions.liveReload = 1;
     }
 
