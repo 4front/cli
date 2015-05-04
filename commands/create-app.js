@@ -97,7 +97,7 @@ module.exports = function(program, done) {
 			var message = "App created successfully at:\n" + createdApp.url +
 				"\n\n";
 
-			if (answers.existing === true)
+			if (answers.startingMode === 'existing')
 				message += "To start developing run:\n$ 4front dev -o";
 			else
 				message += "To start developing run:\n$ cd " + createdApp.name +

@@ -4,6 +4,7 @@ var formatUrl = require('url').format;
 var api = require('../lib/api');
 var querystring = require('querystring');
 var openBrowser = require('open');
+var basedir = require('../lib/basedir');
 var log = require('../lib/log');
 var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
@@ -103,40 +104,6 @@ module.exports = function(program, done) {
         server.stop();
     });
   });
-
-  function determineBaseDir(callback) {
-		var baseDir;
-		if (_.isObject(program.virtualAppManifest.baseDir)) {
-			buildDirName = program.virtualAppManifest.baseDir[program.buildType];
-      if (!buildDirName)
-        return callback(Error.create("No baseDir specified for buildType " + program.buildType));
-
-      var baseDir = path.join(program.cwd, buildDirName);
-      fs.exists(baseDir, function(exists) {
-        if (exists === false)
-          return callback(Error.create("The specified baseDir " + buildDirName + " for buildType " + program.buildType + " does not exist."));
-
-        log.debug('setting baseDir to %s', baseDir);
-        program.baseDir = baseDir;
-        return callback(null);
-      });
-		}
-		// If there was no explicit baseDir specified in package.json, fallback to convention.
-		else {
-			var baseDirConventions = {
-				debug: ['src', 'app'],
-				release: ['dist', 'build']
-			};
-
-			helper.takeFirstExistsPath(program.cwd, baseDirConventions[program.buildType], function(err, baseDir) {
-        if (err) return callback(err);
-
-        log.debug('setting baseDir to %s', baseDir);
-        program.baseDir = baseDir;
-        callback(null);
-      });
-    }
-	}
 
   function buildSandboxUrl() {
     var devOptions = {
