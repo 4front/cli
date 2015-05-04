@@ -11,6 +11,7 @@ var async = require('async');
 var log = require('../lib/log');
 var updateNotifier = require('update-notifier');
 var shortid = require('shortid');
+var debug = require('debug')('4front:cli');
 var cliInit = require('../lib/cli-init');
 var pkg = require('../package.json');
 
@@ -87,6 +88,7 @@ program
 	.option('-o, --open', 'Open a browser to the local server')
 	.option('--release', 'Run in release mode')
 	.option('--port [portNumber]', 'Port number to listen on')
+	.option('-l, --livereload', 'Inject livereload script into html pages')
 	.command('dev')
 	.description("Start the developer sandbox environment")
 	.action(commandAction('dev-sandbox', {
@@ -145,11 +147,12 @@ function commandAction(name, commandOptions) {
 			}
 
 			// Run the command
-			log.debug("run command %s", name);
+			debug("run command %s", name);
 			require('../commands/' + name)(program, function(err, onKill) {
 				if (err) {
+					debug("error returned from command %o", err);
 					if (err instanceof Error)
-						log.error(Error.publicMessage(err));
+						log.error(err.toString());
 					else if (_.isString(err))
 						log.error(err);
 

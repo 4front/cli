@@ -10,6 +10,7 @@ var querystring = require('querystring');
 var openBrowser = require('open');
 var basedir = require('../lib/basedir');
 var log = require('../lib/log');
+var debug = require('debug')('4front:cli:dev-sandbox');
 var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
 var spawn = require('../lib/spawn');
@@ -18,17 +19,15 @@ var basedir = require('../lib/basedir');
 module.exports = function(program, done) {
   _.defaults(program, {
     port: 3000,
-    liveReload: true,
+    liveReload: false,
     cwd: process.cwd(),
     buildType: 'debug'
   });
 
-  log.debug("running dev command");
+  debug("running dev-sandbox command");
 
   if (program.release === true)
     program.buildType = 'release';
-
-  program.virtualApp.requireSsl = true;
 
   // Verify that the build type is valid.
   if (_.contains(['debug', 'release'], program.buildType) === false) {
@@ -55,7 +54,7 @@ module.exports = function(program, done) {
     basedir(program, function(err, baseDir) {
       if (err) return cb(err);
 
-      log.debug("setting baseDir to %s", baseDir);
+      debug("setting baseDir to %s", baseDir);
       program.baseDir = baseDir;
       cb();
     });
@@ -105,19 +104,33 @@ module.exports = function(program, done) {
       localhost.listen(program.port, cb);
   });
 
+  asyncTasks.push(function(cb) {
+    if (options.)
+  });
+
   async.series(asyncTasks, function(err) {
     if (err) return done(err);
 
-    // Display a message that the app is ready for development at the sandboxUrl.
-    log.messageBox("The dev sandbox was launched in your browser with url:");
-    log.writeln(sandboxUrl);
+    var delay = 2000;
+    debug("delay 1 second before launching browser");
+    setTimeout(function() {
+      // Display a message that the app is ready for development at the sandboxUrl.
+      log.messageBox("The dev sandbox was launched in your browser with url:");
+      log.writeln(sandboxUrl);
 
-    openBrowser(sandboxUrl);
+      openBrowser(sandboxUrl);
+      done(null, function() {
+        if (server)
+          server.stop();
+      });
+    }, delay);
 
-    done(null, function() {
-      if (server)
-        server.stop();
-    });
+    // openBrowser(sandboxUrl);
+    //
+    // done(null, function() {
+    //   if (server)
+    //     server.stop();
+    // });
   });
 
   function buildSandboxUrl() {
