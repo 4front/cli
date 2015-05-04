@@ -104,33 +104,27 @@ module.exports = function(program, done) {
       localhost.listen(program.port, cb);
   });
 
-  asyncTasks.push(function(cb) {
-    if (options.)
-  });
+  if (program.liveReload) {
+    asyncTasks.push(function(cb) {
+      // Put in an artificial delay to give time for external livereload server
+      // to be listening.
+      debug("delay 2 seconds to give time for livereload to be initialized");
+      setTimeout(cb, 2000);
+    });
+  }
 
   async.series(asyncTasks, function(err) {
     if (err) return done(err);
 
-    var delay = 2000;
-    debug("delay 1 second before launching browser");
-    setTimeout(function() {
-      // Display a message that the app is ready for development at the sandboxUrl.
-      log.messageBox("The dev sandbox was launched in your browser with url:");
-      log.writeln(sandboxUrl);
+    // Display a message that the app is ready for development at the sandboxUrl.
+    log.messageBox("The dev sandbox was launched in your browser with url:");
+    log.writeln(sandboxUrl);
 
-      openBrowser(sandboxUrl);
-      done(null, function() {
-        if (server)
-          server.stop();
-      });
-    }, delay);
-
-    // openBrowser(sandboxUrl);
-    //
-    // done(null, function() {
-    //   if (server)
-    //     server.stop();
-    // });
+    openBrowser(sandboxUrl);
+    done(null, function() {
+      if (server)
+        server.stop();
+    });
   });
 
   function buildSandboxUrl() {
