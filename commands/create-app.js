@@ -3,14 +3,15 @@ var async = require('async');
 var request = require('request');
 var _ = require('lodash');
 var fs = require('fs');
-var unzip = require('unzip');
 var urljoin = require('url-join');
 var path = require('path');
 var inquirer = require('inquirer');
 var spawn = require('../lib/spawn');
 var api = require('../lib/api');
 var log = require('../lib/log');
+var debug = require('debug')('4front:cli:create-app');
 var manifest = require('../lib/manifest');
+var template = require('../lib/template');
 var helper = require('../lib/helper');
 
 require("simple-errors");
@@ -131,7 +132,7 @@ module.exports = function(program, done) {
 		log.debug("fetching app templates");
 		api(program, {
 			method: 'GET',
-			path: '/platform/app-templates'
+			path: '/platform/starter-templates'
 		}, function(err, templates) {
 			if (err) return callback(err);
 			callback(null, templates);
@@ -305,19 +306,10 @@ module.exports = function(program, done) {
 	}
 
 	function unpackTemplate(templateUrl, appDir, callback) {
-		if (templateUrl.slice(-4) !== '.zip')
-			return callback(new Error("Template URL must be a .zip"));
-
 		// Download, unzip, and extract the template.
 		log.info("Unpacking template %s to %s", templateUrl, appDir);
 
-		request.get({url: templateUrl})
-			.pipe(unzip.Extract({path: appDir}))
-			.on('error', function(err) {
-				return callback(err);
-			})
-			// unzip emits the close event once contents are fully extracted to disk
-			.on('close', callback);
+		template.extract(templateUrl, appDir, callback);
 	}
 
 	function createBlankStart(answers, appDir, callback) {

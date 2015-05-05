@@ -13,12 +13,14 @@ var request = require('request');
 var inquirer = require('inquirer');
 var createApp = require('../commands/create-app');
 var os = require('os');
+var debug = require('debug')('4front:cli:create-app-test');
 var mockSpawn = require('./mock-spawn');
 var mockInquirer = require('./mock-inquirer');
 
 require('dash-assert');
 
 var sampleTemplate = path.resolve(__dirname, "./fixtures/sample-app-template.zip");
+var sampleTemplateWithRoot = path.resolve(__dirname, "./fixtures/sample-app-with-root-dir.zip");
 
 describe('create-app', function() {
   var self;
@@ -53,7 +55,7 @@ describe('create-app', function() {
     sinon.stub(request, 'get', function(options, callback) {
       var urlPath = parseUrl(options.url).pathname;
       switch (urlPath) {
-        case '/api/platform/app-templates':
+        case '/api/platform/starter-templates':
           return callback(null, {statusCode: 200}, self.mockTemplates);
           break;
         case '/api/profile/orgs':
@@ -64,6 +66,10 @@ describe('create-app', function() {
           // request is not passing in a callback.
           return fs.createReadStream(sampleTemplate);
           break;
+        case '/sample-app-with-root-dir.zip':
+          // Return the readStream directly. The way this call is made
+          // request is not passing in a callback.
+          return fs.createReadStream(sampleTemplateWithRoot);
 
         default:
           throw new Error("Unexpected request " + urlPath);
@@ -111,7 +117,7 @@ describe('create-app', function() {
         sinon.match({url: 'https://apphost.com/api/profile/orgs'})))
 
       assert.isTrue(request.get.calledWith(
-        sinon.match({url: 'https://apphost.com/api/platform/app-templates'})))
+        sinon.match({url: 'https://apphost.com/api/platform/starter-templates'})))
 
       assert.isTrue(request.head.calledWith(
         sinon.match({url: 'https://apphost.com/api/apps/test-app'})))
@@ -170,6 +176,29 @@ describe('create-app', function() {
         assert.isTrue(self.mockInquirer.wasAsked('templateUrl'));
         assert.isTrue(request.get.calledWith(
           sinon.match({url: self.mockAnswers.templateUrl})));
+
+        done();
+      });
+    });
+
+    it('skips root directory in zip archive', function(done) {
+      _.extend(this.mockAnswers, {
+        startingMode: 'scratch',
+        templateUrl: 'http://github.com/sample-app-with-root-dir.zip'
+      });
+
+      createApp(this.program, function(err) {
+        if (err) return done(err);
+
+        var appDir = path.join(self.program.baseDir, self.mockAnswers.appName);
+
+        // verify that the extracted contents from the template zip are present
+        ['index.html', 'js/app.js'].forEach(function(file) {
+          var filePath = path.join(appDir, 'app', file);
+
+          debug('check if %s exists', filePath);
+          assert.isTrue(fs.existsSync(filePath));
+        });
 
         done();
       });
