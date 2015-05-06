@@ -19,7 +19,7 @@ var basedir = require('../lib/basedir');
 module.exports = function(program, done) {
   _.defaults(program, {
     port: 3000,
-    liveReload: true,
+    liveReload: program.virtualAppManifest.liveReload === true,
     cwd: process.cwd(),
     buildType: 'debug'
   });
@@ -69,7 +69,7 @@ module.exports = function(program, done) {
   });
 
   asyncTasks.push(function(cb) {
-    log.debug("uploading the app manifest");
+    debug("uploading the app manifest");
 
     // Upload the app manifest
     var requestOptions = {

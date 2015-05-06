@@ -83,12 +83,38 @@ program
 		loadManifest: false
 	}));
 
+// Set an environment variable
+program
+	.option('--key [key]')
+	.option('--value [value]')
+	.option('--virtual-env [virtualEnv]')
+	.option('--encrypt')
+	.command('env:set')
+	.description('Set an environment variable')
+	.action(commandAction('env', {
+		requireAuth: true,
+		loadManifest: true,
+		loadVirtualApp: true,
+		subCommand: 'set'
+	}));
+
+	// List the environment variables
+	program
+		.command('env:list')
+		.description('List the environment variables')
+		.action(commandAction('env', {
+			requireAuth: true,
+			loadManifest: true,
+			loadVirtualApp: true,
+			subCommand: 'list'
+		}));
+
 // Launch the developer sandbox
 program
 	.option('-o, --open', 'Open a browser to the local server')
 	.option('--release', 'Run in release mode')
 	.option('--port [portNumber]', 'Port number to listen on')
-	.option('-l, --livereload', 'Inject livereload script into html pages')
+	.option('-l, --liveReload', 'Inject livereload script into html pages')
 	.command('dev')
 	.description("Start the developer sandbox environment")
 	.action(commandAction('dev-sandbox', {
@@ -118,6 +144,11 @@ program
 	.command('default-profile')
 	.action(commandAction('default-profile'));
 
+program.command('*')
+	.action(function() {
+		log.error("Invalid command " + process.argv.slice(2));
+	});
+
 program.parse(process.argv);
 
 if (!process.argv.slice(2).length) {
@@ -134,7 +165,8 @@ function commandAction(name, commandOptions) {
 		_.defaults(program, {
 			globalConfigPath: path.join(osenv.home(), '.4front.json'),
 			build: 'debug',
-			cwd: process.cwd()
+			cwd: process.cwd(),
+			subCommand: commandOptions.subCommand
 		});
 
 		if (program.release)

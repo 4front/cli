@@ -111,20 +111,20 @@ describe('sandboxServer', function() {
 
 	describe('/sandbox route', function() {
 		beforeEach(function(done) {
-			fs.stat(path.join(this.program.baseDir, 'index.html'), function(err, stats) {
+			helper.fileHash(path.join(this.program.baseDir, 'index.html'), function(err, hash) {
 				if (err) return done(err);
 
-				self.lastModified = stats.mtime.getTime();
+				self.hash = hash;
 				done();
 			});
 		});
 
-		it('last modified time is in the past', function(done) {
+		it('hash is different', function(done) {
 			var server = sandboxServer(this.program);
 			var redirectUrl = 'https://appname--dev.apphost.com/';
 
 			supertest(server)
-				.get('/sandbox/index.html?mtime=' + (this.lastModified - 1000) + '&return=' + encodeURIComponent(redirectUrl))
+				.get('/sandbox/index.html?hash=not_a_real_hash&return=' + encodeURIComponent(redirectUrl))
 				.expect(302)
 				.expect(function(res) {
           var apiUploadUrl = self.program.profile.url + '/api/dev/' + self.program.virtualApp.appId + '/upload/index.html'
@@ -135,12 +135,12 @@ describe('sandboxServer', function() {
 				.end(done);
 		});
 
-    it('last-modified value is the same', function(done) {
+    it('hash value is the same', function(done) {
       var server = sandboxServer(this.program);
 			var redirectUrl = 'https://appname--dev.apphost.com/';
 
       supertest(server)
-				.get("/sandbox/index.html?mtime=" + this.lastModified + "&return=" + encodeURIComponent(redirectUrl))
+				.get("/sandbox/index.html?hash=" + this.hash + "&return=" + encodeURIComponent(redirectUrl))
 				.expect(302)
 				.expect(function(res) {
 					assert.isFalse(request.post.called);
