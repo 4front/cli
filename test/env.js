@@ -144,6 +144,10 @@ describe('env', function() {
       });
     });
 
+    afterEach(function() {
+      request.get.restore();
+    });
+
     it('lists env variables', function(done) {
       envCommand(this.program, function(err) {
         if (err) return done(err);

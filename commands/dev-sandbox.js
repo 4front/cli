@@ -60,6 +60,18 @@ module.exports = function(program, done) {
   });
 
   asyncTasks.push(function(cb) {
+    // The build command will be build:debug or build:release
+    var npmBuildCommand = 'build:' + program.buildType;
+
+    if (program.virtualAppManifest.scripts[npmBuildCommand]) {
+      log.debug("Found npm watch script");
+      spawn('npm', ['run-script', npmBuildCommand], cb);
+    }
+    else
+      cb();
+  });
+
+  asyncTasks.push(function(cb) {
     if (program.virtualAppManifest.scripts.watch) {
       log.debug("Found npm watch script");
       spawn('npm', ['run-script', 'watch'], {waitForExit: false}, cb);
