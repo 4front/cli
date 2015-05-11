@@ -34,7 +34,8 @@ describe('cliInit', function() {
     this.mockAnswers = {
       platformUrl: 'https://apphost.com',
       username: 'username',
-      password: 'password'
+      password: 'password',
+			identityProvider: 'ActiveDirectory'
     };
 
     this.mockInquirer = require('./mock-inquirer')(this.mockAnswers);
@@ -79,10 +80,11 @@ describe('cliInit', function() {
 
 		cliInit(this.program, this.commandOptions, function(err) {
 			assert.isTrue(self.mockInquirer.wasAsked('platformUrl'));
+			assert.isTrue(self.mockInquirer.wasAsked('identityProvider'));
 			assert.isTrue(self.mockInquirer.wasAsked('username'));
 			assert.isTrue(self.mockInquirer.wasAsked('password'));
 
-			assert.equal(self.program.profile.url, self.mockAnswers.platformUrl);
+			assert.equal(self.program.profile.platformUrl, self.mockAnswers.platformUrl);
 
 			assert.isMatch(request.post.args[0][0], {
 				method: 'POST',
@@ -96,10 +98,11 @@ describe('cliInit', function() {
 			var globalConfig = JSON.parse(fs.readFileSync(self.program.globalConfigPath).toString());
 
 			assert.deepEqual(globalConfig.profiles[0], {
-				url: self.mockAnswers.platformUrl,
+				platformUrl: self.mockAnswers.platformUrl,
 				name: 'default',
 				default: true,
-				jwt: self.user.jwt
+				jwt: self.user.jwt,
+				identityProvider: self.mockAnswers.identityProvider
 			});
 
 			done();
@@ -112,6 +115,7 @@ describe('cliInit', function() {
 
 		cliInit(this.program, this.commandOptions, function(err) {
 			assert.isTrue(self.mockInquirer.wasAsked('platformUrl'));
+			assert.isTrue(self.mockInquirer.wasAsked('identityProvider'));
 			assert.isTrue(self.mockInquirer.wasAsked('username'));
 			assert.isTrue(self.mockInquirer.wasAsked('password'));
 			assert.isTrue(request.post.called);
@@ -124,16 +128,25 @@ describe('cliInit', function() {
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
 				name: 'host1',
-				url: "https://host1.com"
+				platformUrl: "https://host1.com",
 			}, {
 				name: 'host2',
-				url: "https://host2.com"
+				platformUrl: "https://host2.com",
+				identityProvider: 'BitBucket'
 			}]
 		}, null, 2));
 
 		this.program.profile = 'host2';
 		cliInit(this.program, this.commandOptions, function(err) {
-			assert.equal(self.program.profile.url, 'https://host2.com');
+			assert.equal(self.program.profile.platformUrl, 'https://host2.com');
+
+			assert.isTrue(request.post.calledWith(sinon.match({
+				json: {
+					username: self.mockAnswers.username,
+					password: self.mockAnswers.password,
+					identityProvider: 'BitBucket'
+				}
+			})));
 
 			done();
 		});
@@ -144,16 +157,16 @@ describe('cliInit', function() {
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
 				name: 'host1',
-				url: "https://host1.com"
+				platformUrl: "https://host1.com"
 			}, {
 				name: 'host2',
-				url: "https://host2.com",
+				platformUrl: "https://host2.com",
 				default: true
 			}]
 		}, null, 2));
 
 		cliInit(this.program, this.commandOptions, function(err) {
-			assert.equal(self.program.profile.url, 'https://host2.com');
+			assert.equal(self.program.profile.platformUrl, 'https://host2.com');
 
 			done();
 		});
@@ -164,15 +177,15 @@ describe('cliInit', function() {
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
 				name: 'host1',
-				url: "https://host1.com"
+				platformUrl: "https://host1.com"
 			}, {
 				name: 'host2',
-				url: "https://host2.com"
+				platformUrl: "https://host2.com"
 			}]
 		}, null, 2));
 
 		cliInit(this.program, this.commandOptions, function(err) {
-			assert.equal(self.program.profile.url, 'https://host1.com');
+			assert.equal(self.program.profile.platformUrl, 'https://host1.com');
 
 			done();
 		});
@@ -183,7 +196,7 @@ describe('cliInit', function() {
 		// Write config file with an expired jwt
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
-				url: "https://host1.com",
+				platformUrl: "https://host1.com",
 				jwt: _.extend(this.jwt, {
 					expires: Date.now() - 1000
 				})
@@ -210,7 +223,7 @@ describe('cliInit', function() {
 
 		fs.writeFileSync(this.program.globalConfigPath, JSON.stringify({
 			profiles: [{
-				url: "https://host1.com",
+				platformUrl: "https://host1.com",
 				jwt: self.user.jwt
 			}]
 		}, null, 2));
@@ -294,7 +307,7 @@ describe('cliInit', function() {
 	function writeValidGlobalConfig(self) {
 		fs.writeFileSync(self.program.globalConfigPath, JSON.stringify({
 			profiles: [{
-				url: "https://host1.com",
+				platformUrl: "https://host1.com",
 				jwt: self.user.jwt
 			}]
 		}, null, 2));

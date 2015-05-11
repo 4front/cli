@@ -31,7 +31,7 @@ describe('create-app', function() {
     this.program = {
       profile: {
         name: 'default',
-        url: 'https://apphost.com/',
+        platformUrl: 'https://apphost.com/',
         jwt: {
           token: '23523454'
         }
