@@ -46,7 +46,7 @@ module.exports = function(program, done) {
   // Run "npm run-script build"
   asyncTasks.push(function(cb) {
     if (inputAnswers.runBuildStep === true)
-      spawn('npm', ['run-script', 'build'], {cwd: program.baseDir}, cb);
+      spawn('npm', ['run-script', 'build'], cb);
     else
       cb();
   });
@@ -252,6 +252,7 @@ module.exports = function(program, done) {
       }
     };
 
+    debugger;
     api(program, requestOptions, function(err, version) {
       debug("new version created");
       if (err) return callback(err);

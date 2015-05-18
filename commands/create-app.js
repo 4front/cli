@@ -121,7 +121,7 @@ module.exports = function(program, done) {
 
 			if (results.organizations.length == 0)
 				return callback(
-					"You need to belong to an organization to create a new app. Visit " + urljoin(program.platformUrl, '/portal/orgs/create') + " to get started."
+					"You need to belong to an organization to create a new app. Visit " + urljoin(program.profile.platformUrl, '/portal/orgs/create') + " to get started."
 				);
 
 			promptQuestions(results, callback);
@@ -322,7 +322,7 @@ module.exports = function(program, done) {
 				"\t</head>\n" +
 				"\t<body>\n" +
 				"\t\t<h1>Blank 4front App</h1>\n" +
-				"\t</body>"
+				"\t</body>" +
 			"</html>";
 
 		fs.writeFile(path.join(appDir, 'index.html'), blankHtml, callback);
