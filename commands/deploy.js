@@ -171,8 +171,6 @@ module.exports = function(program, done) {
   }
 
   function uploadFile(filePath, uploadPath, compress, callback) {
-    debug("start upload of %s");
-
     var requestOptions = {
       path: urljoin('apps', program.virtualApp.appId, 'versions',
         newVersion.versionId, 'deploy', uploadPath),
@@ -181,7 +179,7 @@ module.exports = function(program, done) {
     };
 
     function upload(file) {
-      log.info('Deploying file /%s', uploadPath);
+      log.info('Deploying file %s to %s', filePath, uploadPath);
       fs.stat(file, function(err, stat) {
         if (err) return callback(err);
 
@@ -239,6 +237,8 @@ module.exports = function(program, done) {
 
   // Create the new version in a non-ready state.
   function createNewVersion(callback) {
+    var manifest = _.omit(program.virtualAppManifest, 'appId');
+
     // Create the new version
     log.info('Creating new version');
 
@@ -248,11 +248,10 @@ module.exports = function(program, done) {
       json: {
         name: inputAnswers.name,
         message: inputAnswers.message,
-        manifest: program.virtualAppManifest
+        manifest: manifest
       }
     };
 
-    debugger;
     api(program, requestOptions, function(err, version) {
       debug("new version created");
       if (err) return callback(err);
