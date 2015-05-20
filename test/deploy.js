@@ -186,8 +186,7 @@ describe('deploy', function() {
     deploy(this.program, function(err) {
       if (err) return done(err);
 
-      assert.isTrue(childProcess.spawn.calledWith('npm', ['run-script', 'build'],
-        sinon.match({cwd: self.program.cwd})));
+      assert.isTrue(childProcess.spawn.calledWith('npm', ['run-script', 'build']));
         
       done();
     });

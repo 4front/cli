@@ -49,7 +49,7 @@ describe('add-profile', function() {
       var globalConfig = JSON.parse(fs.readFileSync(self.program.globalConfigPath));
       assert.deepEqual(globalConfig.profiles[0], {
         name: self.program.profileName,
-        url: self.program.profileUrl,
+        platformUrl: self.program.profileUrl,
         default: true
       });
 

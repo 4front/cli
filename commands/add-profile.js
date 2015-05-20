@@ -16,7 +16,7 @@ module.exports = function(program, done) {
 
   var profile = {
     name: program.profileName,
-    url: program.profileUrl
+    platformUrl: program.profileUrl
   };
 
   if (program.globalConfig.profiles.length === 0)
