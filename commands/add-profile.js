@@ -7,8 +7,8 @@ module.exports = function(program, done) {
   if (_.isEmpty(program.profileName))
     return done("Please provide a profile name with --profile-name option");
 
-  if (_.isEmpty(program.profileUrl))
-    return done("Please provide a profile url with --profile-url option");
+  if (_.isEmpty(program.endpoint))
+    return done("Please provide an endpoint url with --endpoint option");
 
   // Check if this profile already exists
   if (_.any(program.globalConfig.profiles, {name: program.profileName}))
@@ -16,7 +16,7 @@ module.exports = function(program, done) {
 
   var profile = {
     name: program.profileName,
-    platformUrl: program.profileUrl
+    endpoint: program.endpoint
   };
 
   if (program.globalConfig.profiles.length === 0)

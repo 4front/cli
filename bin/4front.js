@@ -57,7 +57,7 @@ program
 
 // Add a new profile
 program
-	.option('--profile-url [profileUrl]', "The url of the 4front instance")
+	.option('--endpoint [endpoint]', "The url of the 4front instance")
 	.command('add-profile')
 	.description("Register a new profile")
 	.action(commandAction('add-profile', {

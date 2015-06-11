@@ -28,7 +28,7 @@ describe('sandboxServer', function() {
 		this.program = {
 			profile: {
 				name: 'default',
-				platformUrl: 'https://apphost.com',
+				endpoint: 'https://apphost.com',
 				jwt: {
 					token: '23523454'
 				}
@@ -127,7 +127,7 @@ describe('sandboxServer', function() {
 				.get('/sandbox/index.html?hash=not_a_real_hash&return=' + encodeURIComponent(redirectUrl))
 				.expect(302)
 				.expect(function(res) {
-          var apiUploadUrl = self.program.profile.platformUrl + '/api/dev/' + self.program.virtualApp.appId + '/upload/index.html'
+          var apiUploadUrl = self.program.profile.endpoint + '/api/dev/' + self.program.virtualApp.appId + '/upload/index.html'
 					assert.ok(request.post.calledWith(sinon.match({url: apiUploadUrl})));
 
           assert.equal(res.headers.location, redirectUrl);

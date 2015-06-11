@@ -22,7 +22,7 @@ module.exports = function(program, done) {
 
     if (orgs.length === 0) {
       log.messageBox("You don't belong to any organizations yet.\n" +
-        "Visit " + urljoin(program.profile.platformUrl, '/portal/orgs/create') + " to get started.");
+        "Visit " + urljoin(program.profile.endpoint, '/portal/orgs/create') + " to get started.");
 
       return done();
     }

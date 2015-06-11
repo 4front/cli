@@ -43,13 +43,13 @@ describe('add-profile', function() {
 
   it('adds first profile', function(done) {
     this.program.profileName = 'production';
-    this.program.profileUrl = 'https://4frontapps.com';
+    this.program.endpoint = 'https://4frontapps.com';
 
     addProfile(this.program, function(err) {
       var globalConfig = JSON.parse(fs.readFileSync(self.program.globalConfigPath));
       assert.deepEqual(globalConfig.profiles[0], {
         name: self.program.profileName,
-        platformUrl: self.program.profileUrl,
+        endpoint: self.program.endpoint,
         default: true
       });
 
@@ -64,11 +64,11 @@ describe('add-profile', function() {
     });
   });
 
-  it('returns error if profile url missing', function(done) {
+  it('returns error if endpoint missing', function(done) {
     this.program.profileName = 'production';
 
     addProfile(this.program, function(err) {
-      assert.matchesPattern(err, /Please provide a profile url/);
+      assert.matchesPattern(err, /Please provide an endpoint url/);
       done();
     });
   });
@@ -76,11 +76,11 @@ describe('add-profile', function() {
   it('returns error if profile name already exists', function(done) {
     this.program.globalConfig.profiles.push({
       name: 'production',
-      url: 'https://4frontapps.com'
+      endpoint: 'https://4frontapps.com'
     });
 
     this.program.profileName = 'production';
-    this.program.profileUrl = 'https://4frontapps.com';
+    this.program.endpoint = 'https://4frontapps.com';
 
     addProfile(this.program, function(err) {
       assert.matchesPattern(err, /There is already a profile/);

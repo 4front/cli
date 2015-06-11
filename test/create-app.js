@@ -31,7 +31,7 @@ describe('create-app', function() {
     this.program = {
       profile: {
         name: 'default',
-        platformUrl: 'https://apphost.com/',
+        endpoint: 'https://apphost.com/',
         jwt: {
           token: '23523454'
         }
@@ -41,7 +41,7 @@ describe('create-app', function() {
 
     this.mockAnswers = {
       appName: 'test-app',
-      platformUrl: 'https://apphost.com',
+      endpoint: 'https://apphost.com',
       username: 'username',
       password: 'password'
     };

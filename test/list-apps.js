@@ -18,7 +18,7 @@ describe('list-apps', function() {
     this.mockAnswers = {};
     this.program = {
       profile: {
-        platformUrl: 'https://apphost.com/',
+        endpoint: 'https://apphost.com/',
         jwt: {
           token: '23523454'
         }

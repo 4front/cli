@@ -121,7 +121,7 @@ module.exports = function(program, done) {
 
 			if (results.organizations.length == 0)
 				return callback(
-					"You need to belong to an organization to create a new app. Visit " + urljoin(program.profile.platformUrl, '/portal/orgs/create') + " to get started."
+					"You need to belong to an organization to create a new app. Visit " + urljoin(program.profile.endpoint, '/portal/orgs/create') + " to get started."
 				);
 
 			promptQuestions(results, callback);
