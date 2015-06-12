@@ -98,16 +98,16 @@ program
 		subCommand: 'set'
 	}));
 
-	// List the environment variables
-	program
-		.command('env:list')
-		.description('List the environment variables')
-		.action(commandAction('env', {
-			requireAuth: true,
-			loadManifest: true,
-			loadVirtualApp: true,
-			subCommand: 'list'
-		}));
+// List the environment variables
+program
+	.command('env:list')
+	.description('List the environment variables')
+	.action(commandAction('env', {
+		requireAuth: true,
+		loadManifest: true,
+		loadVirtualApp: true,
+		subCommand: 'list'
+	}));
 
 // Launch the developer sandbox
 program
