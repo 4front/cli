@@ -184,7 +184,7 @@ function commandAction(name, commandOptions) {
 				if (err) {
 					debug("error returned from command %o", err);
 					if (err instanceof Error)
-						log.error(err.toString());
+						log.error(err);
 					else if (_.isString(err))
 						log.error(err);
 
