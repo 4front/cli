@@ -54,10 +54,21 @@ program
 		loadManifest: false
 	}));
 
+// Create a new organization
+program
+	.option('--org-name [orgName]', "The name of the organization")
+	.command('create-organization')
+	.description("Create a new organization")
+	.action(commandAction("create-org", {
+		requireAuth: true,
+		loadManifest: false,
+		loadVirtualApp: false
+	}));
 
 // Add a new profile
 program
-	.option('--endpoint [endpoint]', "The url of the 4front instance")
+	.option('--endpoint [endpoint]', "The url endpoint for the 4front instance")
+	.option('--profile-name [name]', "The name of the 4front profile")
 	.command('add-profile')
 	.description("Register a new profile")
 	.action(commandAction('add-profile', {
