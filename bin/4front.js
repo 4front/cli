@@ -150,6 +150,16 @@ program
 		loadManifest: true
 	}));
 
+program
+	.command('login')
+	.description("Login to 4front to generate a new JWT in the .4front.json file")
+	.action(commandAction('login', {
+		requireAuth: true,
+		forceLogin: true,
+		loadVirtualApp: false,
+		loadManifest: false
+	}));
+
 // Set the default profile
 program
 	.command('default-profile')
@@ -185,8 +195,12 @@ function commandAction(name, commandOptions) {
 
 		cliInit(program, commandOptions, function(err) {
 			if (err) {
-				log.error(err);
-				return process.exit();
+				if (err.status === 401)
+					log.error("Invalid credentials");
+				else
+					log.error(err);
+
+				return process.exit(1);
 			}
 
 			// Run the command
@@ -199,7 +213,7 @@ function commandAction(name, commandOptions) {
 					else if (_.isString(err))
 						log.error(err);
 
-					process.exit();
+					process.exit(1);
 				}
 
 				// Don't shutdown the process if keepAlive is specified.
