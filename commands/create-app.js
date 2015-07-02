@@ -99,10 +99,10 @@ module.exports = function(program, done) {
 				"\n\n";
 
 			if (answers.startingMode === 'existing')
-				message += "To start developing run:\n$ 4front dev -o";
+				message += "To start developing run:\n$ 4front dev";
 			else
 				message += "To start developing run:\n$ cd " + createdApp.name +
-				"\n\nThen:\n$ 4front dev -o";
+				"\n\nThen:\n$ 4front dev";
 
 			message +=
 				"\n\nWhen you are ready to deploy, simply run:\n$ 4front deploy";
@@ -211,13 +211,13 @@ module.exports = function(program, done) {
 
 				answers.appName = appName;
 				callback(null, answers);
-			})
+			});
 		});
 	}
 
 	function collectAppName(callback) {
 		log.messageBox(
-			"Please choose a name for your app which will be used as\nthe URL, i.e. http://<app_name>." + program.virtualHost + ".\nNames may only contain lowercase letters, numbers, \ndashes, and underscores."
+			"Please choose a name for your app which will be used as\nthe URL, i.e. http://<app_name>." + program.virtualHost + ".\nNames may only contain lowercase letters, numbers, and dashes."
 		);
 
 		var question = {
@@ -225,7 +225,7 @@ module.exports = function(program, done) {
 			message: 'App name',
 			name: 'appName',
 			validate: function(input) {
-				if (!/^[a-z0-9-_]+$/.test(input))
+				if (!/^[a-z0-9\-]+$/.test(input))
 					return "Invalid app name";
 				else
 					return true;
