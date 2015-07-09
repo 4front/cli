@@ -100,7 +100,7 @@ program
 	.option('--value [value]')
 	.option('--virtual-env [virtualEnv]')
 	.option('--encrypt')
-	.command('env:set')
+	.command('set-env')
 	.description('Set an environment variable')
 	.action(commandAction('env', {
 		requireAuth: true,
@@ -111,7 +111,7 @@ program
 
 // List the environment variables
 program
-	.command('env:list')
+	.command('list-env')
 	.description('List the environment variables')
 	.action(commandAction('env', {
 		requireAuth: true,

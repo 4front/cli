@@ -152,7 +152,8 @@ module.exports = function(program, done) {
     return formatUrl({
       protocol: program.virtualApp.requireSsl === true ? 'https' : 'http',
       host: program.virtualApp.name + '--dev.' + program.virtualHost,
-      query: {_dev: querystring.stringify(devOptions)}
+      pathname: '/__login',
+      query: devOptions
     });
   }
 };
