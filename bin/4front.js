@@ -31,6 +31,7 @@ program.version(pkg.version)
 	.option('--debug', 'Emit debug messages')
 	.option('--token [token]', 'JSON web token')
 	.option('--profile [profileName]', 'Name of the profile')
+	.option('--appid [appId]', 'Set appId (in place of the one defined in package.json)')
 
 // Create new application
 program
@@ -42,6 +43,15 @@ program
 		requireAuth: true,
 		loadVirtualApp: false,
 		loadManifest: false
+	}));
+
+program
+	.command('delete-app')
+	.description('Delete an existing 4front app')
+	.action(commandAction('delete-app', {
+		requireAuth: true,
+		loadVirtualApp: true,
+		loadManifest: true
 	}));
 
 // List the applications for an organization
@@ -140,8 +150,6 @@ program
 	.option('--version-name [versionName]', 'Version name')
 	.option('-m, --message [message]', 'Version message')
 	.option('-f, --force', 'Force all production traffic to the new version')
-	.option('--appId [appId]',
-		'Set appId (in place of the one defined in package.json')
 	.command('deploy')
 	.description('Deploy a new version of the app')
 	.action(commandAction('deploy', {
