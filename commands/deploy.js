@@ -55,7 +55,8 @@ module.exports = function(program, done) {
     var globOptions = {
       cwd: program.baseDir,
       dot: false,
-      nodir: true
+      nodir: true,
+      ignore: ["node_modules/**/*"]
     };
 
     debug('globbing up files');
