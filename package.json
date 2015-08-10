@@ -1,6 +1,6 @@
 {
   "name": "4front-cli",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "CLI interface for the 4front multi-tenant web app platform",
   "main": "bin/4front",
   "scripts": {
@@ -53,7 +53,7 @@
     "shortid": "^2.2.2",
     "simple-errors": "^1.0.1",
     "through2": "^0.6.5",
-    "unzip": "^0.1.11",
+    "unzip2": "^0.2.5",
     "update-notifier": "^0.3.2",
     "url-join": "0.0.1"
   },
