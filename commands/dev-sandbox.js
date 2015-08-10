@@ -102,13 +102,13 @@ module.exports = function(program, done) {
     if (program.virtualApp.requireSsl) {
       // Using the same SSL cert from the grunt server task
       httpsOptions = {
-        key: fs.readFileSync(path.join(__dirname, '../certs', 'server.key')).toString(),
-        cert: fs.readFileSync(path.join(__dirname, '../certs', 'server.crt')).toString(),
-        ca: fs.readFileSync(path.join(__dirname, '../certs', 'ca.crt')).toString(),
-        passphrase: 'grunt',
+        key: fs.readFileSync(path.join(__dirname, '../certs', 'private.key')).toString(),
+        cert: fs.readFileSync(path.join(__dirname, '../certs', 'localhost.crt')).toString(),
         rejectUnauthorized: false
       };
 
+      // Also need to create a standard http listener to serve up the trustcert page
+      localhost.listen(program.port + 1, cb);
       https.createServer(httpsOptions, localhost).listen(program.port, cb);
     }
     else
@@ -131,7 +131,17 @@ module.exports = function(program, done) {
     log.messageBox("The dev sandbox was launched in your browser with url:");
     log.writeln(sandboxUrl);
 
-    openBrowser(sandboxUrl);
+    // If the app uses https, first show the user a page that tells them
+    // how to trust the localhost certificate.
+    // if (program.virtualApp.requireSsl === true) {
+    //   openBrowser("http://localhost:" + (program.port + 1) + "/__trustcert?url=" + encodeURIComponent(sandboxUrl));
+    // }
+    // else {
+    //   openBrowser(sandboxUrl);
+    // }
+
+    openBrowser("http://localhost:" + (program.port + 1) + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
+
     done(null, function() {
       if (server)
         server.stop();
