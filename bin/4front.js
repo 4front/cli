@@ -31,7 +31,7 @@ program.version(pkg.version)
 	.option('--debug', 'Emit debug messages')
 	.option('--token [token]', 'JSON web token')
 	.option('--profile [profileName]', 'Name of the profile')
-	.option('--appid [appId]', 'Set appId (in place of the one defined in package.json)')
+	.option('--app-id [appId]', 'Set appId (in place of the one defined in package.json)')
 
 // Create new application
 program

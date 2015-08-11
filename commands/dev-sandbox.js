@@ -107,22 +107,12 @@ module.exports = function(program, done) {
         rejectUnauthorized: false
       };
 
-      // Also need to create a standard http listener to serve up the trustcert page
-      localhost.listen(program.port + 1, cb);
+      // The https listener can still accept http requests for the /trustcert page
       https.createServer(httpsOptions, localhost).listen(program.port, cb);
     }
     else
       localhost.listen(program.port, cb);
   });
-
-  if (program.liveReload) {
-    asyncTasks.push(function(cb) {
-      // Put in an artificial delay to give time for external livereload server
-      // to be listening.
-      debug("delay 2 seconds to give time for livereload to be initialized");
-      setTimeout(cb, 2000);
-    });
-  }
 
   async.series(asyncTasks, function(err) {
     if (err) return done(err);
@@ -133,14 +123,12 @@ module.exports = function(program, done) {
 
     // If the app uses https, first show the user a page that tells them
     // how to trust the localhost certificate.
-    // if (program.virtualApp.requireSsl === true) {
-    //   openBrowser("http://localhost:" + (program.port + 1) + "/__trustcert?url=" + encodeURIComponent(sandboxUrl));
-    // }
-    // else {
-    //   openBrowser(sandboxUrl);
-    // }
-
-    openBrowser("http://localhost:" + (program.port + 1) + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
+    if (program.virtualApp.requireSsl === true) {
+      openBrowser("http://localhost:" + program.port + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
+    }
+    else {
+      openBrowser(sandboxUrl);
+    }
 
     done(null, function() {
       if (server)
