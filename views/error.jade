@@ -1,0 +1,18 @@
+extends layout
+
+block content
+  h1.err #{status} Error
+  h2 #{message}
+  if stack
+    section
+      pre.breakout.small_text 
+        strong #{stack}
+        
+  if help 
+    section
+      pre.breakout
+        strong #{help}
+
+  ul
+    li
+      a(href="http://4front.io/docs", target="_blank") 4front Documentation

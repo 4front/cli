@@ -134,7 +134,7 @@ program
 program
 	.option('-o, --open', 'Open a browser to the local server')
 	.option('--release', 'Run in release mode')
-	.option('--port [portNumber]', 'Port number to listen on')
+	.option('--port <n>', 'Port number to listen on', parseInt)
 	.option('-l, --liveReload', 'Inject livereload script into html pages')
 	.command('dev')
 	.description("Start the developer sandbox environment")

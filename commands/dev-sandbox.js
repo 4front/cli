@@ -15,6 +15,7 @@ var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
 var spawn = require('../lib/spawn');
 var basedir = require('../lib/basedir');
+var express = require('express');
 
 module.exports = function(program, done) {
   _.defaults(program, {
@@ -107,8 +108,30 @@ module.exports = function(program, done) {
         rejectUnauthorized: false
       };
 
-      // The https listener can still accept http requests for the /trustcert page
-      https.createServer(httpsOptions, localhost).listen(program.port, cb);
+      // Create a special http server just for serving the trustcert page
+      var httpServer = express();
+      httpServer.use('/static', express.static(path.join(__dirname, '../static')));
+      httpServer.get('/trustcert', function(req, res, next) {
+        res.render(path.join(__dirname, '../views/trustcert.jade'), {
+          url: req.query.url
+        });
+      });
+
+      httpServer.all('*', function(req, res, next) {
+        next(Error.http(404, "Page not found"));
+      });
+
+      httpServer.use(require('../lib/middleware').error);
+
+      // Run the httpServer on one port higher
+      async.parallel([
+        function(_cb) {
+          httpServer.listen(program.port + 1, _cb);
+        },
+        function(_cb) {
+          https.createServer(httpsOptions, localhost).listen(program.port, _cb);
+        }
+      ], cb);
     }
     else
       localhost.listen(program.port, cb);
@@ -124,15 +147,15 @@ module.exports = function(program, done) {
     // If the app uses https, first show the user a page that tells them
     // how to trust the localhost certificate.
     if (program.virtualApp.requireSsl === true) {
-      openBrowser("http://localhost:" + program.port + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
+      openBrowser("http://localhost:" + (program.port + 1) + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
     }
     else {
       openBrowser(sandboxUrl);
     }
 
     done(null, function() {
-      if (server)
-        server.stop();
+      if (localhost)
+        localhost.stop();
     });
   });
 
@@ -140,7 +163,7 @@ module.exports = function(program, done) {
     var devOptions = {
       buildType: program.buildType,
       token: program.profile.jwt.token,
-      port: program.port || 3000
+      port: program.port
     };
 
     if (program.liveReload === true) {

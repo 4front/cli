@@ -1,124 +1,17 @@
-doctype html
-html
-  head
-    meta(charset='utf-8')
-    meta(http-equiv='X-UA-Compatible', content='IE=edge')
-    title 4front - #{status} Error
-    style.
-      body {
-        margin: 0;
-        padding: 0;
-        background: #eee;
-        line-height: 18px;
-        font-family: Helvetica, sans-serif;
-      }
-      div.page {
-        margin: 72px auto;
-        margin: 36px auto;
-        background: #fff;
-        border-radius: 18px;
-        -webkit-box-shadow: 0px 2px 7px #999;
-        -moz-box-shadow: 0px 2px 7px #999;
-        padding: 36px 90px;
-        width: 480px;
-        position: relative;
-      }
-      .big div.page {
-        width: 720px;
-      }
-      h1, h2, p, li {
-        font-family: Helvetica, sans-serif;
-        font-size: 15px;
-      }
-      h1 {
-        line-height: 45px;
-        font-size: 36px;
-        margin: 0;
-      }
-      h1:before {
-        font-size: 66px;
-        line-height: 42px;
-        position: absolute;
-        right: 576px;
-      }
-      .big h1:before {
-        right: 819px;
-      }
-      h1.ok {
-        color: #060;
-      }
-      h1.ok:before {
-        content: "&#128274";
-        color: #090;
-      }
-      h1.ssl {
-        //- color: #600;
-        padding-left: 60px;
-        padding-bottom: 5px;
-      }
-      h1.ssl {
-        background-image: url('/static/ssl-logo.png');
-        background-size: 50px 50px;
-        background-repeat: no-repeat;
-      }
-   
-      h2 {
-        line-height: 27px;
-        font-size: 18px;
-        font-weight: normal;
-        margin: 0;
-      }
-      a, pre span {
-        color: #555;
-      }
-      h2, p, pre {
-        color: #222;
-      }
-      pre {
-        white-space: pre-wrap;
-        font-size: 13px;
-      }
-      pre, code {
-        font-family: Menlo, Monaco, monospace;
-      }
-      p code {
-        font-size: 12px;
-      }
-      pre.breakout {
-        border-top: 1px solid #ddd;
-        border-bottom: 1px solid #ddd;
-        background: #f7faec;
-        margin-left: -90px;
-        margin-right: -90px;
-        padding: 8px 0 8px 90px;
-      }
-      pre.small_text {
-        font-size: 10px;
-      }
-      pre.small_text strong {
-        font-size: 13px;
-      }
-      ul {
-        padding: 0;
-      }
-      li {
-        list-style-type: none;
-        font-size: 13px;
-      }
-  body
-    div.page
-      h1.ssl #{status} Dev Sandbox SSL
-      h2 #{message}
-      
-      p This app requires SSL. Upon clicking the <strong>proceed link</strong> below, you will be prompted by your 
-        | browser to trust the self-signed certificate used by the localhost development sandbox. Once you
-        | accept the risk, subsequent requests should work without any further confirmation.
-      
-      //- input(type="checkbox")
-      //- label Don't show this again
-        
-      a.trust(href=url) Proceed to browser certificate confirmation
+extends layout
+
+block content
+  h1.ssl Dev Sandbox SSL
   
-      ul
-        li 
-          a(href="http://4front.io/docs/dev-sandbox", target="_blank") 4front dev sandbox documentation
+  p This app requires SSL. Upon clicking the <strong>proceed link</strong> below, you will be prompted by your 
+    | browser to trust the self-signed certificate used by the localhost development sandbox. Once you
+    | accept the risk, subsequent requests should work without any further confirmation.
+  
+  //- input(type="checkbox")
+  //- label Don't show this again
+    
+  a.trust(href=url) Proceed to browser certificate confirmation
+
+  ul
+    li 
+      a(href="http://4front.io/docs/dev-sandbox", target="_blank") 4front dev sandbox documentation
