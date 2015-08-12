@@ -109,29 +109,30 @@ module.exports = function(program, done) {
       };
 
       // Create a special http server just for serving the trustcert page
-      var httpServer = express();
-      httpServer.use('/static', express.static(path.join(__dirname, '../static')));
-      httpServer.get('/trustcert', function(req, res, next) {
-        res.render(path.join(__dirname, '../views/trustcert.jade'), {
-          url: req.query.url
-        });
-      });
+      // var httpServer = express();
+      // httpServer.use('/static', express.static(path.join(__dirname, '../static')));
+      // httpServer.get('/trustcert', function(req, res, next) {
+      //   res.render(path.join(__dirname, '../views/trustcert.jade'), {
+      //     url: req.query.url
+      //   });
+      // });
+      //
+      // httpServer.all('*', function(req, res, next) {
+      //   next(Error.http(404, "Page not found"));
+      // });
+      // httpServer.use(require('../lib/middleware').error);
 
-      httpServer.all('*', function(req, res, next) {
-        next(Error.http(404, "Page not found"));
-      });
-
-      httpServer.use(require('../lib/middleware').error);
+      https.createServer(httpsOptions, localhost).listen(program.port, cb);
 
       // Run the httpServer on one port higher
-      async.parallel([
-        function(_cb) {
-          httpServer.listen(program.port + 1, _cb);
-        },
-        function(_cb) {
-          https.createServer(httpsOptions, localhost).listen(program.port, _cb);
-        }
-      ], cb);
+      // async.parallel([
+      //   function(_cb) {
+      //     httpServer.listen(program.port + 1, _cb);
+      //   },
+      //   function(_cb) {
+      //     https.createServer(httpsOptions, localhost).listen(program.port, _cb);
+      //   }
+      // ], cb);
     }
     else
       localhost.listen(program.port, cb);
@@ -146,12 +147,14 @@ module.exports = function(program, done) {
 
     // If the app uses https, first show the user a page that tells them
     // how to trust the localhost certificate.
-    if (program.virtualApp.requireSsl === true) {
-      openBrowser("http://localhost:" + (program.port + 1) + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
-    }
-    else {
-      openBrowser(sandboxUrl);
-    }
+    // if (program.virtualApp.requireSsl === true) {
+    //   openBrowser("http://localhost:" + (program.port + 1) + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
+    // }
+    // else {
+    //   openBrowser(sandboxUrl);
+    // }
+
+    openBrowser(sandboxUrl);
 
     done(null, function() {
       if (localhost)
