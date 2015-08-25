@@ -150,6 +150,7 @@ program
 	.option('--version-name [versionName]', 'Version name')
 	.option('-m, --message [message]', 'Version message')
 	.option('-f, --force', 'Force all production traffic to the new version')
+	.option('--open', 'Open the newly deployed version in a browser tab', true)
 	.command('deploy')
 	.description('Deploy a new version of the app')
 	.action(commandAction('deploy', {

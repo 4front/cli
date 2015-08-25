@@ -18,6 +18,7 @@ var api = require('../lib/api');
 var log = require('../lib/log');
 var basedir = require('../lib/basedir');
 var helper = require('../lib/helper');
+var openBrowser = require('open');
 
 require("simple-errors");
 
@@ -26,6 +27,10 @@ var compressExtensions = ['.css', '.js', '.json', '.txt', '.svg'];
 module.exports = function(program, done) {
   // Create a new version object
   var newVersion, asyncTasks = [], inputAnswers = {};
+
+  _.defaults(program, {
+    open: true
+  });
 
   // Force buildType to be release
   program.buildType = 'release';
@@ -76,7 +81,7 @@ module.exports = function(program, done) {
 
     log.success("New version %s deployed and available at: %s", newVersion.versionId, newVersion.previewUrl);
     if (program.open === true)
-      open(newVersion.previewUrl);
+      openBrowser(newVersion.previewUrl);
 
     done();
   });
@@ -151,14 +156,12 @@ module.exports = function(program, done) {
     var uploadCount = 0;
 
     async.each(deployFiles, function(file, cb) {
-      var fullPath = path.join(program.baseDir, file);
-
       // Ensure the slashes are forward in the relative path
       var uploadPath = file.replace(/\\/g, '/');
       uploadCount++;
 
       var compress = shouldCompress(file);
-      uploadFile(fullPath, uploadPath, compress, cb);
+      uploadFile(file, uploadPath, compress, cb);
     }, function(err) {
       if (err) return callback(err);
 
@@ -172,6 +175,8 @@ module.exports = function(program, done) {
   }
 
   function uploadFile(filePath, uploadPath, compress, callback) {
+    var fullPath = path.join(program.baseDir, filePath);
+
     var requestOptions = {
       path: urljoin('apps', program.virtualApp.appId, 'versions',
         newVersion.versionId, 'deploy', uploadPath),
@@ -198,7 +203,7 @@ module.exports = function(program, done) {
       var gzipFile = path.join(os.tmpdir(), shortid.generate() + path.extname(filePath) + '.gz');
 
       debug("Writing to gzipFile %s", gzipFile);
-      fs.createReadStream(filePath)
+      fs.createReadStream(fullPath)
         .pipe(zlib.createGzip())
         .pipe(fs.createWriteStream(gzipFile))
         .on('error', function(err) {
@@ -210,7 +215,7 @@ module.exports = function(program, done) {
         });
     }
     else {
-      upload(filePath);
+      upload(fullPath);
     }
   }
 
