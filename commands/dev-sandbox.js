@@ -20,7 +20,7 @@ var express = require('express');
 module.exports = function(program, done) {
   _.defaults(program, {
     port: 3000,
-    liveReload: program.virtualAppManifest.liveReload === true,
+    autoReload: program.virtualAppManifest.autoReload === true,
     cwd: process.cwd(),
     buildType: 'debug'
   });
@@ -169,8 +169,8 @@ module.exports = function(program, done) {
       port: program.port
     };
 
-    if (program.liveReload === true) {
-      devOptions.liveReload = 1;
+    if (program.autoReload === true) {
+      devOptions.autoReload = 1;
     }
 
     return formatUrl({
