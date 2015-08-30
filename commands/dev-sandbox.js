@@ -15,11 +15,12 @@ var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
 var spawn = require('../lib/spawn');
 var basedir = require('../lib/basedir');
+var express = require('express');
 
 module.exports = function(program, done) {
   _.defaults(program, {
     port: 3000,
-    liveReload: program.virtualAppManifest.liveReload === true,
+    autoReload: program.virtualAppManifest.autoReload === true,
     cwd: process.cwd(),
     buildType: 'debug'
   });
@@ -102,27 +103,40 @@ module.exports = function(program, done) {
     if (program.virtualApp.requireSsl) {
       // Using the same SSL cert from the grunt server task
       httpsOptions = {
-        key: fs.readFileSync(path.join(__dirname, '../certs', 'server.key')).toString(),
-        cert: fs.readFileSync(path.join(__dirname, '../certs', 'server.crt')).toString(),
-        ca: fs.readFileSync(path.join(__dirname, '../certs', 'ca.crt')).toString(),
-        passphrase: 'grunt',
+        key: fs.readFileSync(path.join(__dirname, '../certs', 'private.key')).toString(),
+        cert: fs.readFileSync(path.join(__dirname, '../certs', 'localhost.crt')).toString(),
         rejectUnauthorized: false
       };
 
+      // Create a special http server just for serving the trustcert page
+      // var httpServer = express();
+      // httpServer.use('/static', express.static(path.join(__dirname, '../static')));
+      // httpServer.get('/trustcert', function(req, res, next) {
+      //   res.render(path.join(__dirname, '../views/trustcert.jade'), {
+      //     url: req.query.url
+      //   });
+      // });
+      //
+      // httpServer.all('*', function(req, res, next) {
+      //   next(Error.http(404, "Page not found"));
+      // });
+      // httpServer.use(require('../lib/middleware').error);
+
       https.createServer(httpsOptions, localhost).listen(program.port, cb);
+
+      // Run the httpServer on one port higher
+      // async.parallel([
+      //   function(_cb) {
+      //     httpServer.listen(program.port + 1, _cb);
+      //   },
+      //   function(_cb) {
+      //     https.createServer(httpsOptions, localhost).listen(program.port, _cb);
+      //   }
+      // ], cb);
     }
     else
       localhost.listen(program.port, cb);
   });
-
-  if (program.liveReload) {
-    asyncTasks.push(function(cb) {
-      // Put in an artificial delay to give time for external livereload server
-      // to be listening.
-      debug("delay 2 seconds to give time for livereload to be initialized");
-      setTimeout(cb, 2000);
-    });
-  }
 
   async.series(asyncTasks, function(err) {
     if (err) return done(err);
@@ -131,10 +145,20 @@ module.exports = function(program, done) {
     log.messageBox("The dev sandbox was launched in your browser with url:");
     log.writeln(sandboxUrl);
 
+    // If the app uses https, first show the user a page that tells them
+    // how to trust the localhost certificate.
+    // if (program.virtualApp.requireSsl === true) {
+    //   openBrowser("http://localhost:" + (program.port + 1) + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
+    // }
+    // else {
+    //   openBrowser(sandboxUrl);
+    // }
+
     openBrowser(sandboxUrl);
+
     done(null, function() {
-      if (server)
-        server.stop();
+      if (localhost)
+        localhost.stop();
     });
   });
 
@@ -142,11 +166,11 @@ module.exports = function(program, done) {
     var devOptions = {
       buildType: program.buildType,
       token: program.profile.jwt.token,
-      port: program.port || 3000
+      port: program.port
     };
 
-    if (program.liveReload === true) {
-      devOptions.liveReload = 1;
+    if (program.autoReload === true) {
+      devOptions.autoReload = 1;
     }
 
     return formatUrl({

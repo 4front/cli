@@ -31,6 +31,7 @@ program.version(pkg.version)
 	.option('--debug', 'Emit debug messages')
 	.option('--token [token]', 'JSON web token')
 	.option('--profile [profileName]', 'Name of the profile')
+	.option('--app-id [appId]', 'Set appId (in place of the one defined in package.json)')
 
 // Create new application
 program
@@ -42,6 +43,15 @@ program
 		requireAuth: true,
 		loadVirtualApp: false,
 		loadManifest: false
+	}));
+
+program
+	.command('delete-app')
+	.description('Delete an existing 4front app')
+	.action(commandAction('delete-app', {
+		requireAuth: true,
+		loadVirtualApp: true,
+		loadManifest: true
 	}));
 
 // List the applications for an organization
@@ -133,8 +143,8 @@ program
 program
 	.option('-o, --open', 'Open a browser to the local server')
 	.option('--release', 'Run in release mode')
-	.option('--port [portNumber]', 'Port number to listen on')
-	.option('-l, --liveReload', 'Inject livereload script into html pages')
+	.option('--port <n>', 'Port number to listen on', parseInt)
+	.option('-r, --autoReload', 'Inject autoReload script into html pages')
 	.command('dev')
 	.description("Start the developer sandbox environment")
 	.action(commandAction('dev-sandbox', {
@@ -149,8 +159,7 @@ program
 	.option('--version-name [versionName]', 'Version name')
 	.option('-m, --message [message]', 'Version message')
 	.option('-f, --force', 'Force all production traffic to the new version')
-	.option('--appId [appId]',
-		'Set appId (in place of the one defined in package.json')
+	.option('--open', 'Open the newly deployed version in a browser tab', true)
 	.command('deploy')
 	.description('Deploy a new version of the app')
 	.action(commandAction('deploy', {

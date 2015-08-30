@@ -27,6 +27,7 @@ describe('deploy', function() {
     self = this;
 
     this.program = {
+      open: false,
       profile: {
         name: 'default',
         url: 'https://apphost.com/',
@@ -187,7 +188,7 @@ describe('deploy', function() {
       if (err) return done(err);
 
       assert.isTrue(childProcess.spawn.calledWith('npm', ['run-script', 'build']));
-        
+
       done();
     });
   });

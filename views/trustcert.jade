@@ -1,0 +1,17 @@
+extends layout
+
+block content
+  h1.ssl Dev Sandbox SSL
+  
+  p This app requires SSL. Upon clicking the <strong>proceed link</strong> below, you will be prompted by your 
+    | browser to trust the self-signed certificate used by the localhost development sandbox. Once you
+    | accept the risk, subsequent requests should work without any further confirmation.
+  
+  //- input(type="checkbox")
+  //- label Don't show this again
+    
+  a.trust(href=url) Proceed to browser certificate confirmation
+
+  ul
+    li 
+      a(href="http://4front.io/docs/dev-sandbox", target="_blank") 4front dev sandbox documentation
