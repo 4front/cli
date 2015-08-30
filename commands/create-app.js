@@ -217,7 +217,7 @@ module.exports = function(program, done) {
 
 	function collectAppName(callback) {
 		log.messageBox(
-			"Please choose a name for your app which will be used as\nthe URL, i.e. http://<app_name>." + program.virtualHost + ".\nNames may only contain lowercase letters, numbers, and dashes."
+			"Please choose a name for your app which will be used as\nthe URL, i.e. http://<app_name>." + program.virtualHost + ".\nNames may only contain lowercase letters, numbers,\nand dashes."
 		);
 
 		var question = {

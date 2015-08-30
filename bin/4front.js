@@ -88,6 +88,15 @@ program
 	}));
 
 program
+	.command('list-profiles')
+	.description('List out the configured profiles from the .4front.json file')
+	.action(commandAction('list-profiles', {
+		requireAuth: false,
+		loadManifest: false,
+		loadVirtualApp: false
+	}));
+
+program
 	.command('bind-app')
 	.description('Bind the current directory to an existing 4front app')
 	.action(commandAction('appBind', {
