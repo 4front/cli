@@ -194,13 +194,14 @@ function commandAction(name, commandOptions) {
 	return function() {
 		_.defaults(program, {
 			globalConfigPath: path.join(osenv.home(), '.4front.json'),
-			build: 'debug',
+			buildType: 'debug',
 			cwd: process.cwd(),
 			subCommand: commandOptions.subCommand
 		});
 
-		if (program.release)
-			program.build = 'release';
+		// Force release build type when deploying
+		if (program.release || name === 'deploy')
+			program.buildType = 'release';
 
 		cliInit(program, commandOptions, function(err) {
 			if (err) {
