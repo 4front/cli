@@ -1,6 +1,5 @@
 var chalk = require('chalk');
 var async = require('async');
-var request = require('request');
 var _ = require('lodash');
 var fs = require('fs');
 var urljoin = require('url-join');
@@ -9,7 +8,6 @@ var inquirer = require('inquirer');
 var spawn = require('../lib/spawn');
 var api = require('../lib/api');
 var log = require('../lib/log');
-var debug = require('debug')('4front:cli:create-app');
 var manifest = require('../lib/manifest');
 var template = require('../lib/template');
 var helper = require('../lib/helper');
@@ -80,8 +78,8 @@ module.exports = function(program, done) {
 		var createdApp = null;
 		// Call the API to create the app.
 		tasks.push(function(cb) {
-			invokeCreateAppApi(answers, function(err, app) {
-				if (err) return cb(err);
+			invokeCreateAppApi(answers, function(_err, app) {
+				if (err) return cb(_err);
 				createdApp = app;
 				cb(null);
 			});
@@ -92,8 +90,8 @@ module.exports = function(program, done) {
 			manifest.update(appDir, createdApp, cb);
 		});
 
-		async.series(tasks, function(err) {
-			if (err) return done(err);
+		async.series(tasks, function(_err) {
+			if (_err) return done(err);
 
 			var message = "App created successfully at:\n" + createdApp.url +
 				"\n\n";
@@ -119,10 +117,11 @@ module.exports = function(program, done) {
 		}, function(err, results) {
 			if (err) return callback(err);
 
-			if (results.organizations.length == 0)
+			if (results.organizations.length === 0) {
 				return callback(
-					"You need to belong to an organization to create a new app. Visit " + urljoin(program.profile.endpoint, '/portal/orgs/create') + " to get started."
-				);
+					"You need to belong to an organization to create a new app. Visit " +
+						urljoin(program.profile.endpoint, '/portal/orgs/create') + " to get started.");
+			}
 
 			promptQuestions(results, callback);
 		});
@@ -217,7 +216,9 @@ module.exports = function(program, done) {
 
 	function collectAppName(callback) {
 		log.messageBox(
-			"Please choose a name for your app which will be used as\nthe URL, i.e. http://<app_name>." + program.virtualHost + ".\nNames may only contain lowercase letters, numbers,\nand dashes."
+			"Please choose a name for your app which will be used as\nthe URL, " +
+			"i.e. http://<app_name>." + program.virtualHost + ".\nNames may only " +
+			"contain lowercase letters, numbers,\nand dashes."
 		);
 
 		var question = {
@@ -227,8 +228,8 @@ module.exports = function(program, done) {
 			validate: function(input) {
 				if (!/^[a-z0-9\-]+$/.test(input))
 					return "Invalid app name";
-				else
-					return true;
+
+				return true;
 			}
 		};
 
@@ -236,7 +237,7 @@ module.exports = function(program, done) {
 
 		// Keep prompting for an appname until one is chosen that doesn't already exist.
 		async.until(function() {
-			return appName != null;
+			return appName !== null;
 		}, function(cb) {
 			inquirer.prompt([question], function(answers) {
 				appNameExists(answers.appName, function(err, exists) {
@@ -262,11 +263,11 @@ module.exports = function(program, done) {
 			value: 'blank'
 		});
 
-		templates.forEach(function(template, i) {
-			if (template.published !== false)
+		templates.forEach(function(_template) {
+			if (_template.published !== false)
 				choices.push({
-					name: template.name,
-					value: template.url
+					name: _template.name,
+					value: _template.url
 				});
 		});
 
@@ -322,7 +323,7 @@ module.exports = function(program, done) {
 				"\t</head>\n" +
 				"\t<body>\n" +
 				"\t\t<h1>Blank 4front App</h1>\n" +
-				"\t</body>" +
+				"\t</body>\n" +
 			"</html>";
 
 		fs.writeFile(path.join(appDir, 'index.html'), blankHtml, callback);
@@ -343,7 +344,7 @@ module.exports = function(program, done) {
 		};
 
 		log.info("Invoking 4front API to create app");
-		var request = api(program, options, function(err, app) {
+		api(program, options, function(err, app) {
 			if (err) return callback(err);
 
 			log.debug("api post to /api/apps succeeded");
