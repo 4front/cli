@@ -32,9 +32,6 @@ module.exports = function(program, done) {
     open: true
   });
 
-  // Force buildType to be release
-  program.buildType = 'release';
-
   // Determine the baseDir
   asyncTasks.push(function(cb) {
     basedir(program, function(err, baseDir) {
@@ -51,7 +48,7 @@ module.exports = function(program, done) {
   // Run "npm run-script build"
   asyncTasks.push(function(cb) {
     if (inputAnswers.runBuildStep === true)
-      spawn('npm', ['run-script', 'build'], cb);
+      spawn('npm', ['run-script', program.virtualApp.scripts.build], cb);
     else
       cb();
   });
@@ -120,7 +117,7 @@ module.exports = function(program, done) {
         name: 'runBuildStep',
         message: 'Run "npm run-script build?"',
         when: function() {
-          return _.isEmpty(program.virtualAppManifest.scripts.build) === false;
+          return _.isString(program.virtualAppManifest.scripts.build);
         },
         default: true
       },

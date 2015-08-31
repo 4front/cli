@@ -1,6 +1,6 @@
 {
   "name": "4front-cli",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "CLI interface for the 4front multi-tenant web hosting platform",
   "main": "bin/4front",
   "scripts": {

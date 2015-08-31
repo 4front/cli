@@ -9,8 +9,14 @@
   // https://gist.github.com/iwek/5599777
   function ajaxGet(settings) {
     var xhr = new XMLHttpRequest();
+
+    xhr.ontimeout = function () {
+      console.error("The request for " + url + " timed out.");
+      settings.error({timeout: true});
+    };
+
   	xhr.onreadystatechange = function() {
-  		if (xhr.readyState !== 4) {
+  		if (xhr.readyState !== 4 || xhr.responseText.length === 0) {
   			return;
   		}
 
@@ -38,10 +44,13 @@
         url: window.location.protocol + '//localhost:' + options.port + '/autoreload/listen',
         success: function(data) {
           _self.reload(data);
+          _self.xhr = poll();
         },
-        error: function() {
+        error: function(err) {
           console.error("Error connecting to the autoreload server");
           _self.xhr = null;
+          if (err.timeout === true)
+            _self.xhr = poll();
         },
         timeout: 1000*60*10,
         dataType: 'json'
@@ -75,7 +84,9 @@
         var existingLink = this._linkedStylesheets[changedFiles[i]];
         if (existingLink) {
           atLeastOneStylesheetReattached = true;
-          this._reattachStylesheetLink(existingLink);
+          console.debug("reattaching stylesheet %s", existingLink.href);
+          var newLink = this._reattachStylesheetLink(existingLink);
+          this._linkedStylesheets[changedFiles[i]] = newLink;
         }
       }
 
@@ -84,23 +95,24 @@
     }
 
     // Fallback is to just reload the whole window
+    console.debug("auto-reloading window");
     window.location.reload();
   };
 
   this._collectLinkedStylesheets = function() {
     var tags = document.getElementsByTagName('link');
-    var links = [];
-    for (var i=0; i<links.length; i++) {
-      if (!link.rel || link.rel.toLowerCase() !== 'stylesheet' || !link.href)
+    var links = {};
+    for (var i=0; i<tags.length; i++) {
+      if (!tags[i].rel || tags[i].rel.toLowerCase() !== 'stylesheet' || !tags[i].href)
         continue;
 
       var hostname = 'localhost:' + options.port + '/';
-      var hostnameIndex = link.href.indexOf(hostname);
+      var hostnameIndex = tags[i].href.indexOf(hostname);
       if (hostnameIndex === -1)
         continue;
 
       // Chop off the host and just return the path to the stylesheet
-      links[link.href.slice(hostnameIndex + 1)] = link;
+      links[tags[i].href.slice(hostnameIndex + hostname.length)] = tags[i];
     }
     this._linkedStylesheets = links;
   };
@@ -130,5 +142,7 @@
       link.parentNode.removeChild(link);
       clone.onreadystatechange = null;
     }, additionalWaitingTime);
+
+    return clone;
   };
 }
