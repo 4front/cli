@@ -14,7 +14,6 @@ var debug = require('debug')('4front:cli:dev-sandbox');
 var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
 var spawn = require('../lib/spawn');
-var basedir = require('../lib/basedir');
 var express = require('express');
 
 module.exports = function(program, done) {
