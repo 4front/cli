@@ -1,4 +1,3 @@
-var http = require('http');
 var https = require('https');
 var _ = require('lodash');
 var fs = require('fs');
@@ -6,16 +5,12 @@ var path = require('path');
 var async = require('async');
 var formatUrl = require('url').format;
 var api = require('../lib/api');
-var querystring = require('querystring');
 var openBrowser = require('open');
 var basedir = require('../lib/basedir');
 var log = require('../lib/log');
 var debug = require('debug')('4front:cli:dev-sandbox');
-var helper = require('../lib/helper');
 var sandboxServer = require('../lib/sandbox-server');
 var spawn = require('../lib/spawn');
-var basedir = require('../lib/basedir');
-var express = require('express');
 
 module.exports = function(program, done) {
   _.defaults(program, {
@@ -94,45 +89,21 @@ module.exports = function(program, done) {
 		api(program, requestOptions, cb);
   });
 
-  var server;
+  var localhost;
   var sandboxUrl = buildSandboxUrl();
 
   asyncTasks.push(function(cb) {
-    var localhost = sandboxServer(program);
+    localhost = sandboxServer(program);
 
     if (program.virtualApp.requireSsl) {
       // Using the same SSL cert from the grunt server task
-      httpsOptions = {
+      var httpsOptions = {
         key: fs.readFileSync(path.join(__dirname, '../certs', 'private.key')).toString(),
         cert: fs.readFileSync(path.join(__dirname, '../certs', 'localhost.crt')).toString(),
         rejectUnauthorized: false
       };
 
-      // Create a special http server just for serving the trustcert page
-      // var httpServer = express();
-      // httpServer.use('/static', express.static(path.join(__dirname, '../static')));
-      // httpServer.get('/trustcert', function(req, res, next) {
-      //   res.render(path.join(__dirname, '../views/trustcert.jade'), {
-      //     url: req.query.url
-      //   });
-      // });
-      //
-      // httpServer.all('*', function(req, res, next) {
-      //   next(Error.http(404, "Page not found"));
-      // });
-      // httpServer.use(require('../lib/middleware').error);
-
       https.createServer(httpsOptions, localhost).listen(program.port, cb);
-
-      // Run the httpServer on one port higher
-      // async.parallel([
-      //   function(_cb) {
-      //     httpServer.listen(program.port + 1, _cb);
-      //   },
-      //   function(_cb) {
-      //     https.createServer(httpsOptions, localhost).listen(program.port, _cb);
-      //   }
-      // ], cb);
     }
     else
       localhost.listen(program.port, cb);
@@ -144,15 +115,6 @@ module.exports = function(program, done) {
     // Display a message that the app is ready for development at the sandboxUrl.
     log.messageBox("The dev sandbox was launched in your browser with url:");
     log.writeln(sandboxUrl);
-
-    // If the app uses https, first show the user a page that tells them
-    // how to trust the localhost certificate.
-    // if (program.virtualApp.requireSsl === true) {
-    //   openBrowser("http://localhost:" + (program.port + 1) + "/trustcert?url=" + encodeURIComponent(sandboxUrl));
-    // }
-    // else {
-    //   openBrowser(sandboxUrl);
-    // }
 
     openBrowser(sandboxUrl);
 
