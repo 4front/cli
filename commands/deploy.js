@@ -48,7 +48,7 @@ module.exports = function(program, done) {
   // Run "npm run-script build"
   asyncTasks.push(function(cb) {
     if (inputAnswers.runBuildStep === true)
-      spawn('npm', ['run-script', program.virtualApp.scripts.build], cb);
+      spawn('npm', ['run-script', program.virtualAppManifest.scripts.build], cb);
     else
       cb();
   });

@@ -42,7 +42,8 @@ describe('deploy', function() {
       virtualAppManifest: {
         scripts: {}
       },
-      cwd: path.join(os.tmpdir(), 'test-app')
+      cwd: path.join(os.tmpdir(), 'test-app'),
+      buildType: 'release'
     };
 
     this.mockAnswers = {};
@@ -181,7 +182,7 @@ describe('deploy', function() {
   });
 
   it('runs npm build', function(done) {
-    self.program.virtualAppManifest.scripts.build = 'gulp build';
+    self.program.virtualAppManifest.scripts.build = 'build';
     self.mockAnswers.runBuildStep= true;
 
     deploy(this.program, function(err) {
