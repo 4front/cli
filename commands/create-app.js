@@ -37,6 +37,7 @@ module.exports = function(program, done) {
 			appDir = path.join(program.baseDir, answers.appName);
 			tasks.push(function(cb) {
 				fs.exists(appDir, function(exists) {
+					debugger;
 					if (exists === true)
 						return cb("Directory " + appDir + " already exists.");
 
@@ -91,7 +92,7 @@ module.exports = function(program, done) {
 		});
 
 		async.series(tasks, function(_err) {
-			if (_err) return done(err);
+			if (_err) return done(_err);
 
 			var message = "App created successfully at:\n" + createdApp.url +
 				"\n\n";
