@@ -42,7 +42,7 @@ describe('sandboxServer', function() {
 
 		sinon.stub(request, 'post', function(options, callback) {
 			// Mock the create app post request
-			if (options.url.indexOf('/dev/' + self.program.virtualApp.appId + '/upload')) {
+			if (options.url.indexOf('/dev/' + self.program.virtualApp.appId + '/upload') !== -1) {
         // callback(null, {statusCode: 201});
 				// Create a dummy write stream
         return through(function(chunk, enc, cb) {
@@ -50,6 +50,9 @@ describe('sandboxServer', function() {
         }, function() {
           callback(null, {statusCode: 200});
         });
+			}
+			else if (options.url.indexOf('/dev/' + self.program.virtualApp.appId + '/notfound') !== -1) {
+				callback(null, {statusCode: 200});
 			}
 		});
 	});
@@ -148,5 +151,50 @@ describe('sandboxServer', function() {
 				})
 				.end(done);
     });
+
+		it('missing file without custom 404', function(done) {
+			var server = sandboxServer(this.program);
+			var redirectUrl = 'https://appname--dev.apphost.com/missing';
+
+			supertest(server)
+				.get('/sandbox/missing.html?return=' + encodeURIComponent(redirectUrl))
+				.expect(302)
+				.expect(function() {
+					assert.isTrue(request.post.calledWith(sinon.match({
+						url: 'https://apphost.com/api/dev/' + self.program.virtualApp.appId + '/notfound/missing.html'
+					})));
+				})
+				.end(done);
+		});
+
+		it('missing file with custom404 query parameter', function(done) {
+			var server = sandboxServer(this.program);
+			var redirectUrl = 'https://appname--dev.apphost.com/missing';
+
+			supertest(server)
+				.get('/sandbox/missing.html?custom404=404.html&return=' + encodeURIComponent(redirectUrl))
+				.expect(302)
+				.expect(function() {
+					assert.isTrue(request.post.calledWith(sinon.match({
+						url: 'https://apphost.com/api/dev/' + self.program.virtualApp.appId + '/upload/404.html'
+					})));
+				})
+				.end(done);
+		});
+
+		it('missing custom 404 page', function(done) {
+			var server = sandboxServer(this.program);
+			var redirectUrl = 'https://appname--dev.apphost.com/missing';
+
+			supertest(server)
+				.get('/sandbox/missing.html?custom404=missing404.html&return=' + encodeURIComponent(redirectUrl))
+				.expect(302)
+				.expect(function() {
+					assert.isTrue(request.post.calledWith(sinon.match({
+						url: 'https://apphost.com/api/dev/' + self.program.virtualApp.appId + '/notfound/missing.html'
+					})));
+				})
+				.end(done);
+		});
 	});
 });
