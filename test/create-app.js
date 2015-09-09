@@ -19,13 +19,15 @@ var mockInquirer = require('./mock-inquirer');
 
 require('dash-assert');
 
-var sampleTemplate = path.resolve(__dirname, "./fixtures/sample-app-template.zip");
-var sampleTemplateWithRoot = path.resolve(__dirname, "./fixtures/sample-app-with-root-dir.zip");
+var sampleTemplate = path.resolve(__dirname,
+  "./fixtures/sample-app-template.zip");
+var sampleTemplateWithRoot = path.resolve(__dirname,
+  "./fixtures/sample-app-with-root-dir.zip");
 
 describe('create-app', function() {
   var self;
 
-	beforeEach(function(done) {
+  beforeEach(function(done) {
     self = this;
 
     this.program = {
@@ -47,41 +49,55 @@ describe('create-app', function() {
     };
 
     this.mockInquirer = require('./mock-inquirer')(this.mockAnswers);
-    this.mockOrgs = [{orgId: '1', name: 'org 1'}, {orgId: '2', name: 'org 2'}];
-    this.mockTemplates = [{name: 'template1', url:'http://github.com/repo.tar.gz'}];
+    this.mockOrgs = [{
+      orgId: '1',
+      name: 'org 1'
+    }, {
+      orgId: '2',
+      name: 'org 2'
+    }];
+    this.mockTemplates = [{
+      name: 'template1',
+      url: 'http://github.com/repo.tar.gz'
+    }];
 
     sinon.stub(log, 'write', _.noop());
 
     sinon.stub(request, 'get', function(options, callback) {
       var urlPath = parseUrl(options.url).pathname;
       switch (urlPath) {
-        case '/api/platform/starter-templates':
-          return callback(null, {statusCode: 200}, self.mockTemplates);
-          break;
-        case '/api/profile/orgs':
-          return callback(null, {statusCode: 200}, self.mockOrgs);
-          break;
-        case '/sample-app-template.zip':
-          // Return the readStream directly. The way this call is made
-          // request is not passing in a callback.
-          return fs.createReadStream(sampleTemplate);
-          break;
-        case '/sample-app-with-root-dir.zip':
-          // Return the readStream directly. The way this call is made
-          // request is not passing in a callback.
-          return fs.createReadStream(sampleTemplateWithRoot);
+      case '/api/platform/starter-templates':
+        return callback(null, {
+          statusCode: 200
+        }, self.mockTemplates);
+      case '/api/profile/orgs':
+        return callback(null, {
+          statusCode: 200
+        }, self.mockOrgs);
+      case '/sample-app-template.zip':
+        // Return the readStream directly. The way this call is made
+        // request is not passing in a callback.
+        return fs.createReadStream(sampleTemplate);
+      case '/sample-app-with-root-dir.zip':
+        // Return the readStream directly. The way this call is made
+        // request is not passing in a callback.
+        return fs.createReadStream(sampleTemplateWithRoot);
 
-        default:
-          throw new Error("Unexpected request " + urlPath);
+      default:
+        throw new Error("Unexpected request " + urlPath);
       }
     });
 
-    sinon.stub(request, 'head').yields(null, {statusCode:404});
+    sinon.stub(request, 'head').yields(null, {
+      statusCode: 404
+    });
 
     sinon.stub(request, 'post', function(options, callback) {
       // Mock the create app post request
       if (options.url.indexOf('/apps')) {
-        callback(null, {statusCode: 201}, {
+        callback(null, {
+          statusCode: 201
+        }, {
           appId: options.json.appId,
           name: options.json.name,
           url: 'https://' + options.json.name + '.apphost.com'
@@ -93,7 +109,7 @@ describe('create-app', function() {
     sinon.stub(childProcess, 'spawn', mockSpawn);
 
     rimraf(path.join(os.tmpdir(), 'test-app'), done);
-	});
+  });
 
   afterEach(function() {
     request.post.restore();
@@ -114,19 +130,26 @@ describe('create-app', function() {
       if (err) return done(err);
 
       assert.isTrue(request.get.calledWith(
-        sinon.match({url: 'https://apphost.com/api/profile/orgs'})))
+        sinon.match({
+          url: 'https://apphost.com/api/profile/orgs'
+        })))
 
       assert.isTrue(request.get.calledWith(
-        sinon.match({url: 'https://apphost.com/api/platform/starter-templates'})))
+        sinon.match({
+          url: 'https://apphost.com/api/platform/starter-templates'
+        })))
 
       assert.isTrue(request.head.calledWith(
-        sinon.match({url: 'https://apphost.com/api/apps/test-app'})))
+        sinon.match({
+          url: 'https://apphost.com/api/apps/test-app'
+        })))
 
       assert.isTrue(self.mockInquirer.wasAsked('orgId'))
       assert.isTrue(self.mockInquirer.wasAsked('appName'));
       assert.isTrue(self.mockInquirer.wasAsked('startingMode'));
       assert.isTrue(self.mockInquirer.wasAsked('templateUrl'));
-      assert.isFalse(self.mockInquirer.wasAsked('confirmExistingDir'));
+      assert.isFalse(self.mockInquirer.wasAsked(
+        'confirmExistingDir'));
       done();
     });
   });
@@ -140,25 +163,40 @@ describe('create-app', function() {
       createApp(this.program, function(err, createdApp) {
         if (err) return done(err);
 
-        var appDir = path.join(self.program.baseDir, self.mockAnswers.appName);
+        var appDir = path.join(self.program.baseDir, self.mockAnswers
+          .appName);
 
-        assert.isFalse(self.mockInquirer.wasAsked('startingMode'));
+        assert.isFalse(self.mockInquirer.wasAsked(
+          'startingMode'));
 
         assert.isTrue(request.get.calledWith(
-          sinon.match({url: self.program.templateUrl})));
+          sinon.match({
+            url: self.program.templateUrl
+          })));
 
         // Assert that both npm and bower install were run
-        assert.isTrue(childProcess.spawn.calledWith('npm', ['install'], sinon.match({cwd: appDir})));
-        assert.isTrue(childProcess.spawn.calledWith('bower', ['install'], sinon.match({cwd: appDir})));
+        assert.isTrue(childProcess.spawn.calledWith('npm', [
+          'install'
+        ], sinon.match({
+          cwd: appDir
+        })));
+        assert.isTrue(childProcess.spawn.calledWith('bower', [
+          'install'
+        ], sinon.match({
+          cwd: appDir
+        })));
 
         // verify that the extracted contents from the template zip are present
-        ['index.html', 'js/app.js', 'css/styles.css', 'package.json'].forEach(function(file) {
+        ['index.html', 'js/app.js', 'css/styles.css',
+          'package.json'
+        ].forEach(function(file) {
           var filePath = path.join(appDir, file);
           assert.isTrue(fs.existsSync(filePath));
         });
 
-        var packageJson = JSON.parse(fs.readFileSync(path.join(appDir, 'package.json')));
-        assert.equal(packageJson['_virtualApp'].appId, createdApp.appId);
+        var packageJson = JSON.parse(fs.readFileSync(path.join(
+          appDir, 'package.json')));
+        assert.equal(packageJson._virtualApp.appId, createdApp.appId);
 
         done();
       });
@@ -175,7 +213,9 @@ describe('create-app', function() {
 
         assert.isTrue(self.mockInquirer.wasAsked('templateUrl'));
         assert.isTrue(request.get.calledWith(
-          sinon.match({url: self.mockAnswers.templateUrl})));
+          sinon.match({
+            url: self.mockAnswers.templateUrl
+          })));
 
         done();
       });
@@ -190,7 +230,8 @@ describe('create-app', function() {
       createApp(this.program, function(err) {
         if (err) return done(err);
 
-        var appDir = path.join(self.program.baseDir, self.mockAnswers.appName);
+        var appDir = path.join(self.program.baseDir, self.mockAnswers
+          .appName);
 
         // verify that the extracted contents from the template zip are present
         ['index.html', 'js/app.js'].forEach(function(file) {
@@ -230,7 +271,8 @@ describe('create-app', function() {
     createApp(this.program, function(err, createdApp) {
       if (err) return done(err);
 
-      var appDir = path.join(self.program.baseDir, self.mockAnswers.appName);
+      var appDir = path.join(self.program.baseDir, self.mockAnswers
+        .appName);
 
       ['index.html', 'package.json'].forEach(function(file) {
         var filePath = path.join(appDir, file);
@@ -238,9 +280,10 @@ describe('create-app', function() {
       });
 
       // Look at the package.json
-      var packageJson = JSON.parse(fs.readFileSync(path.join(appDir, 'package.json')));
-      assert.isObject(packageJson['_virtualApp']);
-      assert.equal(packageJson['_virtualApp'].appId, createdApp.appId);
+      var packageJson = JSON.parse(fs.readFileSync(path.join(appDir,
+        'package.json')));
+      assert.isObject(packageJson._virtualApp);
+      assert.equal(packageJson._virtualApp.appId, createdApp.appId);
 
       done();
     });
@@ -250,10 +293,16 @@ describe('create-app', function() {
     request.head.restore();
 
     var headStub = sinon.stub(request, 'head');
-    headStub.onCall(0).yields(null, {statusCode: 200});
-    headStub.onCall(1).yields(null, {statusCode: 200});
+    headStub.onCall(0).yields(null, {
+      statusCode: 200
+    });
+    headStub.onCall(1).yields(null, {
+      statusCode: 200
+    });
     // On the 3rd call yield a 404 indicating the app name is available
-    headStub.onCall(2).yields(null, {statusCode: 404});
+    headStub.onCall(2).yields(null, {
+      statusCode: 404
+    });
 
     createApp(this.program, function(err) {
       if (err) return done(err);
