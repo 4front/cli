@@ -35,7 +35,7 @@ module.exports = function(program, done) {
   // If serving in release mode, run the build step first.
   asyncTasks.push(function(cb) {
     if (program.buildType === 'release' && program.virtualAppManifest.scripts.build)
-      spawn('npm', ['run-script', 'build'], cb);
+      spawn('npm', ['run-script', program.virtualAppManifest.scripts.build], cb);
     else
       cb();
   });
