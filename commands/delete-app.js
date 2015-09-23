@@ -1,14 +1,7 @@
-var chalk = require('chalk');
-var async = require('async');
-var request = require('request');
 var _ = require('lodash');
-var path = require('path');
 var inquirer = require('inquirer');
 var api = require('../lib/api');
 var log = require('../lib/log');
-var debug = require('debug')('4front:cli:delete-app');
-var manifest = require('../lib/manifest');
-var helper = require('../lib/helper');
 
 require("simple-errors");
 
@@ -37,7 +30,7 @@ module.exports = function(program, done) {
 		};
 
 		log.info("Invoking 4front API to delete app");
-		var request = api(program, options, function(err, app) {
+		api(program, options, function(err) {
 			if (err) return done(err);
 
 			log.success("Successfully deleted app %s", program.virtualApp.name);

@@ -1,7 +1,5 @@
 var chalk = require('chalk');
-var util = require('util');
 var async = require('async');
-var request = require('request');
 var inquirer = require('inquirer');
 var _ = require('lodash');
 var fs = require('fs');
@@ -10,14 +8,12 @@ var zlib = require('zlib');
 var path = require('path');
 var glob = require("glob");
 var urljoin = require('url-join');
-var open = require('open');
 var shortid = require('shortid');
 var debug = require('debug')('4front:cli:deploy');
 var spawn = require('../lib/spawn');
 var api = require('../lib/api');
 var log = require('../lib/log');
 var basedir = require('../lib/basedir');
-var helper = require('../lib/helper');
 var openBrowser = require('open');
 
 require("simple-errors");
@@ -53,6 +49,7 @@ module.exports = function(program, done) {
       cb();
   });
 
+  var filesToDeploy;
   asyncTasks.push(function(cb) {
     var globOptions = {
       cwd: program.baseDir,
@@ -64,7 +61,7 @@ module.exports = function(program, done) {
     debug('globbing up files');
     glob("**/*.*", globOptions, function(err, matches) {
       if (err) return cb(err);
-      deployFiles = matches;
+      filesToDeploy = matches;
       cb();
     });
   });
@@ -76,7 +73,9 @@ module.exports = function(program, done) {
   async.series(asyncTasks, function(err) {
     if (err) return done(err);
 
-    log.success("New version %s deployed and available at: %s", newVersion.versionId, newVersion.previewUrl);
+    log.success("New version %s deployed and available at: %s",
+      newVersion.versionId, newVersion.previewUrl);
+
     if (program.open === true)
       openBrowser(newVersion.previewUrl);
 
@@ -127,7 +126,7 @@ module.exports = function(program, done) {
         name: 'force',
         message: 'Immediately direct all traffic to this new version?',
         default: program.virtualApp.trafficControlEnabled === true ? true : false,
-        when: function(answers) {
+        when: function() {
           return program.virtualApp.trafficControlEnabled === true;
         }
       }
@@ -143,8 +142,11 @@ module.exports = function(program, done) {
     if (_.isEmpty(name))
       return true;
 
-    if (/^[a-z\.\_\-0-9]{5,20}$/i.test(name) !== true)
-      return "Version " + name + " can only consist of letters, numbers, dashes, periods, or underscores and must be between 5 and 20 characters";
+    if (/^[a-z\.\_\-0-9]{5,20}$/i.test(name) !== true) {
+      return "Version " + name + " can only consist of letters, numbers, dashes, " +
+        "periods, or underscores and must be between 5 and 20 characters";
+    }
+
     return true;
   }
 
@@ -152,7 +154,7 @@ module.exports = function(program, done) {
     // PUT each file individually
     var uploadCount = 0;
 
-    async.each(deployFiles, function(file, cb) {
+    async.each(filesToDeploy, function(file, cb) {
       // Ensure the slashes are forward in the relative path
       var uploadPath = file.replace(/\\/g, '/');
       uploadCount++;

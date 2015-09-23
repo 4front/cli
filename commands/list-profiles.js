@@ -1,12 +1,5 @@
-var fs = require('fs');
-var inquirer = require('inquirer');
-var log = require('../lib/log');
-var api = require('../lib/api');
 var Table = require('cli-table');
 var _ = require('lodash');
-var moment = require('moment');
-var urljoin = require('url-join');
-var helper = require('../lib/helper');
 var chalk = require('chalk');
 
 // Register a new profile in the 4front global config file

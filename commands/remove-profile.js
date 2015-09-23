@@ -11,7 +11,8 @@ module.exports = function(program, done) {
   if (_.any(program.globalConfig.profiles, {name: program.profileName}) === false)
     return done("There is no registered profile named " + program.profileName);
 
-  program.globalConfig.profiles = _.reject(program.globalConfig.profiles, {name: program.profileName});
+  program.globalConfig.profiles = _.reject(
+    program.globalConfig.profiles, {name: program.profileName});
 
   log.debug("writing global config to %s", program.globalConfigPath);
   var configJson = JSON.stringify(program.globalConfig, null, 2);
