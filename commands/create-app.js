@@ -340,7 +340,7 @@ module.exports = function(program, done) {
 
 		var options = {
 			method: 'POST',
-			path: '/apps',
+			path: '/orgs/' + answers.orgId + '/apps',
 			json: appData
 		};
 

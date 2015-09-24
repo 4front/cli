@@ -1,14 +1,7 @@
-var chalk = require('chalk');
-var async = require('async');
-var request = require('request');
 var _ = require('lodash');
-var fs = require('fs');
-var urljoin = require('url-join');
-var path = require('path');
 var api = require('../lib/api');
 var log = require('../lib/log');
 var debug = require('debug')('4front:cli:create-org');
-var helper = require('../lib/helper');
 
 require("simple-errors");
 
@@ -30,7 +23,7 @@ module.exports = function(program, done) {
   api(program, requestOptions, function(err, org) {
     if (err) return done(err);
 
-    log.success("Organization %s created", program.orgName);
+    log.success("Organization %s created", org.name);
     done();
   });
 };
