@@ -1,9 +1,9 @@
 var _ = require('lodash');
 var debug = require('debug')('4front:cli:env');
 var api = require('../lib/api');
-var log = require('../lib/log');
 
-var INVALID_KEY_ERR = "Environment variable keys can only contain letters, numbers, dashes, and underscores.";
+var INVALID_KEY_ERR = "Environment variable keys can only contain " +
+  "letters, numbers, dashes, and underscores.";
 
 module.exports = function(program, done) {
   switch (program.subCommand) {
@@ -11,10 +11,11 @@ module.exports = function(program, done) {
       set(); break;
     case "list":
       list(); break;
-    case "del":
+    case "delete":
       del(); break;
     default:
-      return done("Invalid sub-command " + program.subCommand + ". Expected set, get, del, or list.")
+      return done("Invalid sub-command " + program.subCommand +
+        ". Expected set, get, delete, or list.");
   }
 
   function set() {

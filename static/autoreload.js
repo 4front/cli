@@ -57,7 +57,7 @@ window.AutoReload = function(options) {
 					if (err.timeout === true)
 						_self.xhr = poll();
 				},
-				timeout: 1000*60*10,
+				timeout: 1000*60*2,
 				dataType: 'json'
 			});
 		}

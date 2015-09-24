@@ -51,7 +51,7 @@ program
 	.action(commandAction('delete-app', {
 		requireAuth: true,
 		loadVirtualApp: true,
-		loadManifest: true
+		loadManifest: false
 	}));
 
 // List the applications for an organization
@@ -138,6 +138,19 @@ program
 		loadVirtualApp: true,
 		subCommand: 'list'
 	}));
+
+	// Set an environment variable
+	program
+		.option('--key [key]')
+		.option('--virtual-env [virtualEnv]')
+		.command('delete-env')
+		.description('Deletes an environment variable')
+		.action(commandAction('env', {
+			requireAuth: true,
+			loadManifest: true,
+			loadVirtualApp: true,
+			subCommand: 'delete'
+		}));
 
 // Launch the developer sandbox
 program
