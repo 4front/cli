@@ -11,6 +11,7 @@ var log = require('../lib/log');
 var manifest = require('../lib/manifest');
 var template = require('../lib/template');
 var helper = require('../lib/helper');
+var debug = require('debug')('4front:cli');
 
 require("simple-errors");
 
@@ -49,7 +50,7 @@ module.exports = function(program, done) {
 		else
 			appDir = program.baseDir;
 
-		log.debug("Setting appDir to %s", appDir);
+		debug("Setting appDir to %s", appDir);
 
 		if (answers.templateUrl === 'blank') {
 			// Make a new package.json from scratch
@@ -129,7 +130,7 @@ module.exports = function(program, done) {
 	}
 
 	function loadStarterTemplates(callback) {
-		log.debug("fetching app templates");
+		debug("fetching app templates");
 		api(program, {
 			method: 'GET',
 			path: '/platform/starter-templates'
@@ -141,7 +142,7 @@ module.exports = function(program, done) {
 
 	function loadOrganizations(callback) {
 		// Get the user's organizations
-		log.debug("fetching organizations");
+		debug("fetching organizations");
 		api(program, {
 			method: 'GET',
 			path: '/profile/orgs'
@@ -295,7 +296,7 @@ module.exports = function(program, done) {
 	function bowerInstall(appDir, callback) {
 		fs.exists(path.join(appDir, 'bower.json'), function(exists) {
 			if (!exists) {
-				log.debug("No bower.json file exists in app directory");
+				debug("No bower.json file exists in app directory");
 				return callback();
 			}
 
@@ -346,9 +347,10 @@ module.exports = function(program, done) {
 
 		log.info("Invoking 4front API to create app");
 		api(program, options, function(err, app) {
+			debug("done invoking api");
 			if (err) return callback(err);
 
-			log.debug("api post to /api/apps succeeded");
+			debug("api post to /api/apps succeeded");
 			callback(null, app);
 		});
 	}
@@ -360,7 +362,7 @@ module.exports = function(program, done) {
 			path: '/apps/' + appName
 		};
 
-		log.debug("checking if app name exists");
+		debug("checking if app name exists");
 		api(program, options, function(err, body, statusCode) {
 			if (err) return callback(err);
 

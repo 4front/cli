@@ -8,11 +8,11 @@ var path = require('path');
 var fs = require('fs');
 var _ = require('lodash');
 var async = require('async');
-var log = require('../lib/log');
 var updateNotifier = require('update-notifier');
 var shortid = require('shortid');
-var debug = require('debug')('4front:cli');
+var log = require('../lib/log');
 var cliInit = require('../lib/cli-init');
+var debug = require('debug')('4front:cli');
 var pkg = require('../package.json');
 
 require('simple-errors');
@@ -207,8 +207,11 @@ if (!process.argv.slice(2).length) {
 	program.outputHelp();
 }
 
+// Wait to require cliInit until after the log has been configured.
+var cliInit = require('../lib/cli-init');
+
 process.on('exit', function(code) {
-	log.debug("Exiting");
+	debug("Exiting");
 });
 
 function commandAction(name, commandOptions) {
