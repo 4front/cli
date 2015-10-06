@@ -89,25 +89,25 @@ describe('env', function() {
 
         done();
       });
+    });
 
-      it('sets encrypted value', function(done) {
-        _.extend(this.program, {
-          key: 'API_KEY',
-          value: 'some_value',
-          encrypted: true,
-          virtualEnv: 'production'
-        });
+    it('sets encrypted value', function(done) {
+      _.extend(this.program, {
+        key: 'API_KEY',
+        value: 'some_value',
+        encrypted: true,
+        virtualEnv: 'production'
+      });
 
-        envCommand(this.program, function(err) {
-          if (err) return done(err);
+      envCommand(this.program, function(err) {
+        if (err) return done(err);
 
-          assert.isTrue(request.put.calledWith(sinon.match({
-            url: sinon.match('/apps/' + self.program.virtualApp.appId + '/env/production/' + self.program.key),
-            json: {value: self.program.value, encrypted: true}
-          })));
+        assert.isTrue(request.put.calledWith(sinon.match({
+          url: sinon.match('/apps/' + self.program.virtualApp.appId + '/env/production/' + self.program.key),
+          json: {value: self.program.value, encrypted: true}
+        })));
 
-          done();
-        });
+        done();
       });
     });
 
@@ -164,7 +164,7 @@ describe('env', function() {
 
   describe('delete env variable', function() {
     beforeEach(function() {
-      this.program.subCommand = 'del';
+      this.program.subCommand = 'delete';
 
       sinon.stub(request, 'del', function(options, callback) {
         callback(null, {statusCode: 200});

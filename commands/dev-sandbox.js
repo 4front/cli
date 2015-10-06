@@ -57,7 +57,7 @@ module.exports = function(program, done) {
 
   asyncTasks.push(function(cb) {
     if (program.virtualAppManifest.scripts.build) {
-      log.debug("Found npm build script");
+      debug("Found npm build script");
       spawn('npm', ['run-script', program.virtualAppManifest.scripts.build], cb);
     }
     else {
@@ -67,7 +67,7 @@ module.exports = function(program, done) {
 
   asyncTasks.push(function(cb) {
     if (program.virtualAppManifest.scripts.watch) {
-      log.debug("Found npm watch script");
+      debug("Found npm watch script");
       spawn('npm', ['run-script', program.virtualAppManifest.scripts.watch],
         {waitForExit: false}, cb);
     }

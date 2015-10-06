@@ -8,11 +8,11 @@ var path = require('path');
 var fs = require('fs');
 var _ = require('lodash');
 var async = require('async');
-var log = require('../lib/log');
 var updateNotifier = require('update-notifier');
 var shortid = require('shortid');
-var debug = require('debug')('4front:cli');
+var log = require('../lib/log');
 var cliInit = require('../lib/cli-init');
+var debug = require('debug')('4front:cli');
 var pkg = require('../package.json');
 
 require('simple-errors');
@@ -51,7 +51,7 @@ program
 	.action(commandAction('delete-app', {
 		requireAuth: true,
 		loadVirtualApp: true,
-		loadManifest: true
+		loadManifest: false
 	}));
 
 // List the applications for an organization
@@ -139,6 +139,19 @@ program
 		subCommand: 'list'
 	}));
 
+	// Set an environment variable
+	program
+		.option('--key [key]')
+		.option('--virtual-env [virtualEnv]')
+		.command('delete-env')
+		.description('Deletes an environment variable')
+		.action(commandAction('env', {
+			requireAuth: true,
+			loadManifest: true,
+			loadVirtualApp: true,
+			subCommand: 'delete'
+		}));
+
 // Launch the developer sandbox
 program
 	.option('-o, --open', 'Open a browser to the local server')
@@ -194,8 +207,11 @@ if (!process.argv.slice(2).length) {
 	program.outputHelp();
 }
 
+// Wait to require cliInit until after the log has been configured.
+var cliInit = require('../lib/cli-init');
+
 process.on('exit', function(code) {
-	log.debug("Exiting");
+	debug("Exiting");
 });
 
 function commandAction(name, commandOptions) {

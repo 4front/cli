@@ -11,11 +11,11 @@ module.exports = function(program, done) {
       set(); break;
     case "list":
       list(); break;
-    case "del":
+    case "delete":
       del(); break;
     default:
       return done("Invalid sub-command " + program.subCommand +
-        ". Expected set, get, del, or list.")
+        ". Expected set, get, delete, or list.");
   }
 
   function set() {

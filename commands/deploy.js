@@ -85,7 +85,7 @@ module.exports = function(program, done) {
   function collectVersionInputs(callback) {
     // Perform an unattended deployment, possibly from a CI process.
     if (program.unattended === true) {
-      log.debug("Running in unattended mode");
+      debug("Running in unattended mode");
       // Assuming that a CI process would have already run the build step.
       _.extend(inputAnswers, {
         runBuildStep: false,

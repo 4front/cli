@@ -1,6 +1,7 @@
 var fs = require('fs');
 var log = require('../lib/log');
 var _ = require('lodash');
+var debug = require('debug')('4front:cli');
 
 // Remove a profile from the .4front config file
 module.exports = function(program, done) {
@@ -14,7 +15,7 @@ module.exports = function(program, done) {
   program.globalConfig.profiles = _.reject(
     program.globalConfig.profiles, {name: program.profileName});
 
-  log.debug("writing global config to %s", program.globalConfigPath);
+  debug("writing global config to %s", program.globalConfigPath);
   var configJson = JSON.stringify(program.globalConfig, null, 2);
 
   fs.writeFile(program.globalConfigPath, configJson, function(err) {

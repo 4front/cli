@@ -59,7 +59,7 @@ window.AutoReload = function(options) {
           _self.xhr = poll();
         },
         error: function(err) {
-          console.error('Error connecting to the autoreload server');
+          console.error('error connecting to the autoreload server, reconnecting');
           _self.xhr = null;
           if (err.timeout === true) {
             _self.xhr = poll();
