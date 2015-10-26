@@ -20,24 +20,26 @@ module.exports = function(program, done) {
     buildType: 'debug'
   });
 
-  debug("running dev-sandbox command");
+  debug('running dev-sandbox command');
 
-  if (program.release === true)
+  if (program.release === true) {
     program.buildType = 'release';
+  }
 
   // Verify that the build type is valid.
   if (_.contains(['debug', 'release'], program.buildType) === false) {
-    return done("Invalid build-type option value. Valid values are 'debug' and 'release'.");
+    return done('Invalid build-type option value. Valid values are \'debug\' and \'release\'.');
   }
 
   var asyncTasks = [];
 
   // If serving in release mode, run the build step first.
   asyncTasks.push(function(cb) {
-    if (program.buildType === 'release' && program.virtualAppManifest.scripts.build)
+    if (program.buildType === 'release' && program.virtualAppManifest.scripts.build) {
       spawn('npm', ['run-script', program.virtualAppManifest.scripts.build], cb);
-    else
+    } else {
       cb();
+    }
   });
 
   // Determine which directory should be the base from which relative
@@ -49,7 +51,7 @@ module.exports = function(program, done) {
     basedir(program, function(err, baseDir) {
       if (err) return cb(err);
 
-      debug("setting baseDir to %s", baseDir);
+      debug('setting baseDir to %s', baseDir);
       program.baseDir = baseDir;
       cb();
     });
@@ -57,35 +59,34 @@ module.exports = function(program, done) {
 
   asyncTasks.push(function(cb) {
     if (program.virtualAppManifest.scripts.build) {
-      debug("Found npm build script");
+      debug('Found npm build script');
       spawn('npm', ['run-script', program.virtualAppManifest.scripts.build], cb);
-    }
-    else {
+    } else {
       cb();
     }
   });
 
   asyncTasks.push(function(cb) {
     if (program.virtualAppManifest.scripts.watch) {
-      debug("Found npm watch script");
+      debug('Found npm watch script');
       spawn('npm', ['run-script', program.virtualAppManifest.scripts.watch],
         {waitForExit: false}, cb);
-    }
-    else
+    } else {
       cb();
+    }
   });
 
   asyncTasks.push(function(cb) {
-    debug("uploading the app manifest");
+    debug('uploading the app manifest');
 
     // Upload the app manifest
     var requestOptions = {
-			method: 'post',
-			path: '/dev/' + program.virtualApp.appId + '/manifest',
+      method: 'post',
+      path: '/dev/' + program.virtualApp.appId + '/manifest',
       body: _.omit(program.virtualAppManifest, 'scripts', 'appId')
-		};
+    };
 
-		api(program, requestOptions, cb);
+    api(program, requestOptions, cb);
   });
 
   var localhost;
@@ -103,23 +104,22 @@ module.exports = function(program, done) {
       };
 
       https.createServer(httpsOptions, localhost).listen(program.port, cb);
-    }
-    else
+    } else {
       localhost.listen(program.port, cb);
+    }
   });
 
   async.series(asyncTasks, function(err) {
     if (err) return done(err);
 
     // Display a message that the app is ready for development at the sandboxUrl.
-    log.messageBox("The dev sandbox was launched in your browser with url:");
+    log.messageBox('The dev sandbox was launched in your browser with url:');
     log.writeln(sandboxUrl);
 
     openBrowser(sandboxUrl);
 
     done(null, function() {
-      if (localhost)
-        localhost.stop();
+      if (localhost) localhost.stop();
     });
   });
 
