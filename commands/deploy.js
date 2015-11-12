@@ -6,7 +6,7 @@ var fs = require('fs');
 var os = require('os');
 var zlib = require('zlib');
 var path = require('path');
-var glob = require("glob");
+var glob = require('glob');
 var urljoin = require('url-join');
 var shortid = require('shortid');
 var debug = require('debug')('4front:cli:deploy');
@@ -16,7 +16,7 @@ var log = require('../lib/log');
 var basedir = require('../lib/basedir');
 var openBrowser = require('open');
 
-require("simple-errors");
+require('simple-errors');
 
 var compressExtensions = ['.css', '.js', '.json', '.txt', '.svg'];
 
@@ -43,10 +43,11 @@ module.exports = function(program, done) {
 
   // Run "npm run-script build"
   asyncTasks.push(function(cb) {
-    if (inputAnswers.runBuildStep === true)
+    if (inputAnswers.runBuildStep === true) {
       spawn('npm', ['run-script', program.virtualAppManifest.scripts.build], cb);
-    else
+    } else {
       cb();
+    }
   });
 
   var filesToDeploy;
@@ -55,11 +56,11 @@ module.exports = function(program, done) {
       cwd: program.baseDir,
       dot: false,
       nodir: true,
-      ignore: ["node_modules/**/*"]
+      ignore: ['node_modules/**/*']
     };
 
     debug('globbing up files');
-    glob("**/*.*", globOptions, function(err, matches) {
+    glob('**/*.*', globOptions, function(err, matches) {
       if (err) return cb(err);
       filesToDeploy = matches;
       cb();
@@ -73,11 +74,12 @@ module.exports = function(program, done) {
   async.series(asyncTasks, function(err) {
     if (err) return done(err);
 
-    log.success("New version %s deployed and available at: %s",
+    log.success('New version %s deployed and available at: %s',
       newVersion.versionId, newVersion.previewUrl);
 
-    if (program.open === true)
+    if (program.open === true) {
       openBrowser(newVersion.previewUrl);
+    }
 
     done();
   });
@@ -85,7 +87,7 @@ module.exports = function(program, done) {
   function collectVersionInputs(callback) {
     // Perform an unattended deployment, possibly from a CI process.
     if (program.unattended === true) {
-      debug("Running in unattended mode");
+      debug('Running in unattended mode');
       // Assuming that a CI process would have already run the build step.
       _.extend(inputAnswers, {
         runBuildStep: false,
@@ -96,7 +98,7 @@ module.exports = function(program, done) {
       return callback();
     }
 
-    log.messageBox("Deploy a new version of the app.");
+    log.messageBox('Deploy a new version of the app.');
 
     // Use inquirer to collect input.
     var questions = [
@@ -139,12 +141,11 @@ module.exports = function(program, done) {
   }
 
   function validateVersionName(name) {
-    if (_.isEmpty(name))
-      return true;
+    if (_.isEmpty(name)) return true;
 
     if (/^[a-z\.\_\-0-9]{5,20}$/i.test(name) !== true) {
-      return "Version " + name + " can only consist of letters, numbers, dashes, " +
-        "periods, or underscores and must be between 5 and 20 characters";
+      return 'Version ' + name + ' can only consist of letters, numbers, dashes, ' +
+        'periods, or underscores and must be between 5 and 20 characters';
     }
 
     return true;
@@ -201,7 +202,7 @@ module.exports = function(program, done) {
       // Use a random file name to avoid chance of collisions
       var gzipFile = path.join(os.tmpdir(), shortid.generate() + path.extname(filePath) + '.gz');
 
-      debug("Writing to gzipFile %s", gzipFile);
+      debug('Writing to gzipFile %s', gzipFile);
       fs.createReadStream(fullPath)
         .pipe(zlib.createGzip())
         .pipe(fs.createWriteStream(gzipFile))
@@ -212,8 +213,7 @@ module.exports = function(program, done) {
           debug('done writing gzip file');
           return upload(gzipFile);
         });
-    }
-    else {
+    } else {
       upload(fullPath);
     }
   }
@@ -222,9 +222,11 @@ module.exports = function(program, done) {
     var versionData = {};
 
     if (inputAnswers.force === true) {
-      versionData.forceAllTrafficToNewVersion = true;
-      if (program.virtualApp.trafficControlEnabled === true)
+      versionData.forceAllTrafficToNewVersion = true; //eslint-disable-line
+
+      if (program.virtualApp.trafficControlEnabled === true) {
         log.info(chalk.yellow('Forcing all traffic to the new version.'));
+      }
     }
 
     var requestOptions = {
@@ -258,7 +260,7 @@ module.exports = function(program, done) {
     };
 
     api(program, requestOptions, function(err, version) {
-      debug("new version created");
+      debug('new version created');
       if (err) return callback(err);
       newVersion = version;
       callback();
