@@ -22,6 +22,9 @@ updateNotifier({
   updateCheckInterval: 1000 * 60 * 60 * 2 // Check for updates every 2 hours
 }).notify();
 
+// Wait to require cliInit until after the log has been configured.
+var cliInit = require('../lib/cli-init');
+
 program.version(pkg.version)
   .option('--debug', 'Emit debug messages')
   .option('--token [token]', 'JSON web token')
@@ -201,9 +204,6 @@ program.parse(process.argv);
 if (!process.argv.slice(2).length) {
   program.outputHelp();
 }
-
-// Wait to require cliInit until after the log has been configured.
-var cliInit = require('../lib/cli-init');
 
 process.on('exit', function() {
   debug('Exiting');

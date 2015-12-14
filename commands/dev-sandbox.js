@@ -136,7 +136,7 @@ module.exports = function(program, done) {
 
     return formatUrl({
       protocol: program.virtualApp.requireSsl === true ? 'https' : 'http',
-      host: program.virtualApp.name + '--dev.' + program.virtualHost,
+      host: program.virtualApp.name + '--local.' + program.virtualHost,
       pathname: '/__login',
       query: devOptions
     });

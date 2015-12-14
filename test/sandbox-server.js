@@ -122,7 +122,7 @@ describe('sandboxServer', function() {
 
     it('hash is different', function(done) {
       var server = sandboxServer(this.program);
-      var redirectUrl = 'https://appname--dev.apphost.com/';
+      var redirectUrl = 'https://appname--local.apphost.com/';
 
       supertest(server)
         .get('/sandbox/index.html?hash=not_a_real_hash&return=' + encodeURIComponent(redirectUrl))
@@ -138,7 +138,7 @@ describe('sandboxServer', function() {
 
     it('hash value is the same', function(done) {
       var server = sandboxServer(this.program);
-      var redirectUrl = 'https://appname--dev.apphost.com/';
+      var redirectUrl = 'https://appname--local.apphost.com/';
 
       supertest(server)
         .get('/sandbox/index.html?hash=' + this.hash + '&return=' + encodeURIComponent(redirectUrl))
@@ -152,7 +152,7 @@ describe('sandboxServer', function() {
 
     it('missing file without custom 404', function(done) {
       var server = sandboxServer(this.program);
-      var redirectUrl = 'https://appname--dev.apphost.com/missing';
+      var redirectUrl = 'https://appname--local.apphost.com/missing';
 
       supertest(server)
         .get('/sandbox/missing.html?return=' + encodeURIComponent(redirectUrl))
@@ -167,7 +167,7 @@ describe('sandboxServer', function() {
 
     it('missing file with custom404 query parameter', function(done) {
       var server = sandboxServer(this.program);
-      var redirectUrl = 'https://appname--dev.apphost.com/missing';
+      var redirectUrl = 'https://appname--local.apphost.com/missing';
 
       supertest(server)
         .get('/sandbox/missing.html?custom404=404.html&return=' + encodeURIComponent(redirectUrl))
@@ -182,7 +182,7 @@ describe('sandboxServer', function() {
 
     it('missing custom 404 page', function(done) {
       var server = sandboxServer(this.program);
-      var redirectUrl = 'https://appname--dev.apphost.com/missing';
+      var redirectUrl = 'https://appname--local.apphost.com/missing';
 
       supertest(server)
         .get('/sandbox/missing.html?custom404=missing404.html&return=' + encodeURIComponent(redirectUrl))
@@ -202,7 +202,7 @@ describe('sandboxServer', function() {
         .get('/favicon.ico')
         .expect(302)
         .expect(function(res) {
-          assert.equal(res.headers.location, 'http://appname--dev.apphost.com/favicon.ico?default=1');
+          assert.equal(res.headers.location, 'http://appname--local.apphost.com/favicon.ico?default=1');
         })
         .end(done);
     });
